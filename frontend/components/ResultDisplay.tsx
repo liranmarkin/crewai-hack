@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { CheckCircle, Loader2 } from 'lucide-react';
 import { WorkflowState } from '@/lib/types';
 
@@ -51,10 +52,13 @@ export function ResultDisplay({ workflowState }: ResultDisplayProps) {
 
         {currentImage && (
           <>
-            <img
+            <Image
               src={currentImage}
               alt="Generated result"
+              width={400}
+              height={400}
               className="max-w-full max-h-[400px] object-contain"
+              unoptimized
             />
             
             {isComplete && finalResult?.success && (
@@ -79,7 +83,7 @@ export function ResultDisplay({ workflowState }: ResultDisplayProps) {
             Completed in {finalResult.total_iterations} iteration{finalResult.total_iterations !== 1 ? 's' : ''}
             {finalResult.success && finalResult.ocr_text && (
               <>
-                {' '}with text: "{finalResult.ocr_text}"
+                {' '}with text: &quot;{finalResult.ocr_text}&quot;
               </>
             )}
           </p>

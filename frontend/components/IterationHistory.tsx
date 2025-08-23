@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { CheckCircle, XCircle, ChevronRight, ChevronDown } from 'lucide-react';
 import { Iteration } from '@/lib/types';
 
@@ -69,10 +70,13 @@ export function IterationHistory({ iterations }: IterationHistoryProps) {
                       <p className="font-medium mb-2">Image</p>
                       <div className="border border-gray-200 rounded-md overflow-hidden w-36 h-36 bg-gray-50">
                         {iteration.imageUrl ? (
-                          <img
+                          <Image
                             src={iteration.imageUrl}
                             alt={`Iteration ${iteration.id}`}
+                            width={144}
+                            height={144}
                             className="w-full h-full object-cover"
+                            unoptimized
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -124,7 +128,7 @@ export function IterationHistory({ iterations }: IterationHistoryProps) {
                           <div className="ml-6 space-y-2">
                             {iteration.extractedText && (
                               <p className="text-sm text-gray-600">
-                                <span className="font-medium">OCR Result:</span> "{iteration.extractedText}"
+                                <span className="font-medium">OCR Result:</span> &quot;{iteration.extractedText}&quot;
                               </p>
                             )}
                             {iteration.feedback && (

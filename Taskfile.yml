@@ -45,7 +45,13 @@ tasks:
     desc: Fix linting issues in frontend code
     dir: frontend
     cmds:
-      - pnpm run lint -- --fix
+      - pnpm exec eslint . --fix
+
+  frontend:format:
+    desc: Format frontend code (alias for lint-fix)
+    dir: frontend
+    cmds:
+      - pnpm exec eslint . --fix
 
   # Backend tasks
   backend:install:

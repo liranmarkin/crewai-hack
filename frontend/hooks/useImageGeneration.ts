@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { ImageGenerationAPI } from '@/lib/api';
-import { GenerateRequest, SSEEvent, WorkflowState, Iteration } from '@/lib/types';
+import { GenerateRequest, SSEEvent, WorkflowState } from '@/lib/types';
 import { API_URL } from '@/lib/config';
 
 const TIMEOUT_DURATION = 300; // 5 minutes in seconds
@@ -13,8 +13,8 @@ export function useImageGeneration() {
     timeRemaining: TIMEOUT_DURATION,
   });
 
-  const timeoutRef = useRef<NodeJS.Timeout>();
-  const abortControllerRef = useRef<AbortController>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Timer countdown
   useEffect(() => {
@@ -44,39 +44,6 @@ export function useImageGeneration() {
       }
     };
   }, [workflowState.isGenerating, workflowState.timeRemaining]);
-
-  const startGeneration = useCallback(async (request: GenerateRequest) => {
-    // Reset state
-    setWorkflowState({
-      isGenerating: true,
-      iterations: [],
-      isComplete: false,
-      timeRemaining: TIMEOUT_DURATION,
-      error: undefined,
-      currentImage: undefined,
-      finalResult: undefined,
-    });
-
-    abortControllerRef.current = new AbortController();
-
-    try {
-      for await (const event of ImageGenerationAPI.generateImage(request)) {
-        if (abortControllerRef.current?.signal.aborted) {
-          break;
-        }
-        
-        handleSSEEvent(event);
-      }
-    } catch (error) {
-      console.error('Error in image generation:', error);
-      setWorkflowState(prev => ({
-        ...prev,
-        isGenerating: false,
-        isComplete: true,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-      }));
-    }
-  }, []);
 
   const handleSSEEvent = useCallback((event: SSEEvent) => {
     setWorkflowState(prev => {
@@ -166,6 +133,39 @@ export function useImageGeneration() {
       return newState;
     });
   }, []);
+
+  const startGeneration = useCallback(async (request: GenerateRequest) => {
+    // Reset state
+    setWorkflowState({
+      isGenerating: true,
+      iterations: [],
+      isComplete: false,
+      timeRemaining: TIMEOUT_DURATION,
+      error: undefined,
+      currentImage: undefined,
+      finalResult: undefined,
+    });
+
+    abortControllerRef.current = new AbortController();
+
+    try {
+      for await (const event of ImageGenerationAPI.generateImage(request)) {
+        if (abortControllerRef.current?.signal.aborted) {
+          break;
+        }
+        
+        handleSSEEvent(event);
+      }
+    } catch (error) {
+      console.error('Error in image generation:', error);
+      setWorkflowState(prev => ({
+        ...prev,
+        isGenerating: false,
+        isComplete: true,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      }));
+    }
+  }, [handleSSEEvent]);
 
   const reset = useCallback(() => {
     if (abortControllerRef.current) {
