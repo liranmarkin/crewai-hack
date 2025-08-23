@@ -5,3 +5,5 @@ fal-client
 httpx==0.28.1
 requests==2.32.3
 google-cloud-vision==3.8.1
+crewai
+crewai-tools
