@@ -125,16 +125,36 @@ export function IterationHistory({ iterations }: IterationHistoryProps) {
                         </button>
 
                         {isExpanded && (
-                          <div className="ml-6 space-y-2">
+                          <div className="ml-6 space-y-3">
+                            {iteration.prompt && (
+                              <div className="bg-blue-50 p-3 rounded-md">
+                                <p className="text-sm text-gray-600">
+                                  <span className="font-medium text-blue-800">Image Prompt:</span>
+                                </p>
+                                <p className="text-sm text-blue-700 mt-1">
+                                  {iteration.prompt}
+                                </p>
+                              </div>
+                            )}
                             {iteration.extractedText && (
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">OCR Result:</span> &quot;{iteration.extractedText}&quot;
-                              </p>
+                              <div className="bg-gray-50 p-3 rounded-md">
+                                <p className="text-sm text-gray-600">
+                                  <span className="font-medium text-gray-800">OCR Result:</span>
+                                </p>
+                                <p className="text-sm text-gray-700 mt-1">
+                                  &quot;{iteration.extractedText}&quot;
+                                </p>
+                              </div>
                             )}
                             {iteration.feedback && (
-                              <p className="text-gray-700">
-                                {iteration.feedback}
-                              </p>
+                              <div className="bg-gray-50 p-3 rounded-md">
+                                <p className="text-sm text-gray-600">
+                                  <span className="font-medium text-gray-800">Reasoning:</span>
+                                </p>
+                                <p className="text-sm text-gray-700 mt-1">
+                                  {iteration.feedback}
+                                </p>
+                              </div>
                             )}
                             <p className="text-xs text-gray-400">
                               {new Date(iteration.timestamp).toLocaleTimeString()}

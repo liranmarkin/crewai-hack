@@ -47,18 +47,27 @@ export function useImageGeneration() {
 
   const handleSSEEvent = useCallback((event: SSEEvent) => {
     setWorkflowState(prev => {
-      const newState = { ...prev };
+      const newState = { 
+        ...prev, 
+        iterations: [...prev.iterations.map(iter => ({ ...iter }))]
+      };
 
       switch (event.type) {
         case 'iteration_start':
           // Find or create iteration
           let iteration = newState.iterations.find(i => i.id === event.iteration);
           if (!iteration) {
-            iteration = {
+            const newIteration = {
               id: event.iteration,
               timestamp: event.timestamp,
+              prompt: event.prompt,
             };
-            newState.iterations = [...newState.iterations, iteration];
+            newState.iterations = [...newState.iterations, newIteration];
+          } else {
+            // Update existing iteration with prompt if not set
+            if (!iteration.prompt) {
+              iteration.prompt = event.prompt;
+            }
           }
           break;
 
@@ -73,20 +82,25 @@ export function useImageGeneration() {
           }
           break;
 
-        case 'ocr_complete':
-          const ocrIteration = newState.iterations.find(i => i.id === event.iteration);
-          if (ocrIteration) {
-            ocrIteration.extractedText = event.ocr_result;
-            ocrIteration.isMatch = event.match_status;
+        case 'analysis':
+          let analysisIteration = newState.iterations.find(i => i.id === event.iteration);
+          if (!analysisIteration) {
+            // Create iteration if it doesn't exist
+            const newIteration = {
+              id: event.iteration,
+              timestamp: event.timestamp,
+              extractedText: event.ocr_result,
+              isMatch: event.match_status,
+              feedback: event.message,
+            };
+            newState.iterations = [...newState.iterations, newIteration];
+          } else {
+            analysisIteration.extractedText = event.ocr_result;
+            analysisIteration.isMatch = event.match_status;
+            analysisIteration.feedback = event.message;
           }
           break;
 
-        case 'reasoning':
-          const reasoningIteration = newState.iterations.find(i => i.id === event.iteration);
-          if (reasoningIteration) {
-            reasoningIteration.feedback = event.message;
-          }
-          break;
 
         case 'workflow_complete':
           newState.isGenerating = false;

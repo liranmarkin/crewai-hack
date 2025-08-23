@@ -6,8 +6,7 @@ export interface GenerateRequest {
 export type SSEEventType = 
   | 'iteration_start'
   | 'image_generated'
-  | 'ocr_complete'
-  | 'reasoning'
+  | 'analysis'
   | 'workflow_complete'
   | 'workflow_timeout'
   | 'workflow_error'
@@ -21,6 +20,7 @@ export interface BaseSSEEvent {
 export interface IterationStartEvent extends BaseSSEEvent {
   type: 'iteration_start';
   iteration: number;
+  prompt: string;
 }
 
 export interface ImageGeneratedEvent extends BaseSSEEvent {
@@ -29,16 +29,11 @@ export interface ImageGeneratedEvent extends BaseSSEEvent {
   image_url: string;
 }
 
-export interface OCRCompleteEvent extends BaseSSEEvent {
-  type: 'ocr_complete';
+export interface AnalysisEvent extends BaseSSEEvent {
+  type: 'analysis';
   iteration: number;
   ocr_result: string;
   match_status: boolean;
-}
-
-export interface ReasoningEvent extends BaseSSEEvent {
-  type: 'reasoning';
-  iteration: number;
   message: string;
 }
 
@@ -69,8 +64,7 @@ export interface StreamEndEvent extends BaseSSEEvent {
 export type SSEEvent = 
   | IterationStartEvent
   | ImageGeneratedEvent
-  | OCRCompleteEvent
-  | ReasoningEvent
+  | AnalysisEvent
   | WorkflowCompleteEvent
   | WorkflowTimeoutEvent
   | WorkflowErrorEvent
@@ -82,6 +76,7 @@ export interface Iteration {
   extractedText?: string;
   isMatch?: boolean;
   feedback?: string;
+  prompt?: string;
   timestamp: string;
 }
 

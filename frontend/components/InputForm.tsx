@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Info, Play, Timer } from 'lucide-react';
 import { GenerateRequest, WorkflowState } from '@/lib/types';
 
@@ -11,6 +11,11 @@ interface InputFormProps {
 export function InputForm({ onSubmit, workflowState, onReset }: InputFormProps) {
   const [prompt, setPrompt] = useState('');
   const [intendedText, setIntendedText] = useState('');
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +47,7 @@ export function InputForm({ onSubmit, workflowState, onReset }: InputFormProps) 
         <h2 className="text-lg font-semibold">Input</h2>
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} suppressHydrationWarning>
         <div className="mb-4">
           <div className="flex items-center mb-2">
             <label htmlFor="prompt" className="font-medium text-gray-700">
@@ -57,6 +62,7 @@ export function InputForm({ onSubmit, workflowState, onReset }: InputFormProps) 
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             disabled={workflowState.isGenerating}
+            suppressHydrationWarning
           />
         </div>
 
@@ -75,6 +81,7 @@ export function InputForm({ onSubmit, workflowState, onReset }: InputFormProps) 
             value={intendedText}
             onChange={(e) => setIntendedText(e.target.value)}
             disabled={workflowState.isGenerating}
+            suppressHydrationWarning
           />
         </div>
 
