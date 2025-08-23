@@ -17,6 +17,29 @@ The stream starts immediately with `iteration_start` event and continues with wo
 ### GET /api/images/{image_id}
 **Response:** Binary image data (Content-Type: image/png)
 
+## Workflow Flow
+
+### Success Path (Single Iteration)
+1. `iteration_start` (iteration: 1)
+2. `image_generated` (iteration: 1, image_url)
+3. `ocr_complete` (iteration: 1, ocr_result, match_status: true)
+4. `workflow_complete` (success: true)
+5. `stream_end`
+
+### Failure Path with Retry Loop
+1. `iteration_start` (iteration: 1)
+2. `image_generated` (iteration: 1, image_url)
+3. `ocr_complete` (iteration: 1, ocr_result, match_status: false)
+4. `reasoning` (iteration: 1, message explaining OCR mismatch and retry strategy)
+5. `iteration_start` (iteration: 2)
+6. `image_generated` (iteration: 2, image_url)
+7. `ocr_complete` (iteration: 2, ocr_result, match_status)
+8. ... (loop continues until match_status: true or max iterations/timeout)
+9. Either:
+   - `workflow_complete` (success: true) if match found
+   - `workflow_timeout` if max retries reached
+10. `stream_end`
+
 ## Server-Sent Events Stream
 
 ### Event Types
@@ -100,6 +123,30 @@ The stream starts immediately with `iteration_start` event and continues with wo
   "timestamp": "2025-01-23T10:32:46Z"
 }
 ```
+
+## Implementation Notes
+
+### Iteration Loop Logic
+- Maximum 8 iterations per workflow
+- 5-minute total timeout
+- Each failed OCR result triggers a `reasoning` event explaining why it failed
+- The reasoning event contains strategy for next iteration (adjusted prompt)
+- Loop continues until:
+  - OCR text matches intended text (success)
+  - Maximum iterations reached (timeout)
+  - 5-minute timeout exceeded (timeout)
+  - Unrecoverable error occurs (error)
+
+### OCR Matching Rules
+- Text comparison is case-insensitive
+- Whitespace is normalized (multiple spaces become single space)
+- Leading/trailing whitespace is ignored
+- Match must be exact after normalization
+
+### Reasoning Event Purpose
+- Explains why current iteration failed
+- Describes what was detected vs what was expected
+- Indicates strategy for next attempt (e.g. "emphasizing correct spelling", "adjusting text size")
 
 ## Enums
 
