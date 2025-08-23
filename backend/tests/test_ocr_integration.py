@@ -11,10 +11,9 @@ async def test_ocr_integration_basic() -> None:
     """Test the OCR integration with a simple request."""
     url = "http://localhost:8000/api/generate"
 
-    # Test with a simple prompt that might generate readable text
+    # Test with a simple prompt that contains intended text
     payload = {
-        "prompt": "A simple birthday card with balloons",
-        "intended_text": "HAPPY BIRTHDAY",
+        "prompt": "A simple birthday card with balloons saying 'HAPPY BIRTHDAY'",
     }
 
     async with httpx.AsyncClient(timeout=120.0) as client:
@@ -23,6 +22,7 @@ async def test_ocr_integration_basic() -> None:
 
             ocr_events = []
             image_urls = []
+            text_extraction_event = None
             workflow_completed = False
 
             async for line in response.aiter_lines():
@@ -32,7 +32,18 @@ async def test_ocr_integration_basic() -> None:
                         event = json.loads(event_data)
                         event_type = event.get("type", "unknown")
 
-                        if event_type == "analysis":
+                        if event_type == "text_extraction":
+                            text_extraction_event = event
+                            extracted_text = event.get("extracted_text")
+                            has_intended_text = event.get("has_intended_text", False)
+
+                            # Verify text extraction event structure
+                            assert isinstance(has_intended_text, bool), "has_intended_text should be boolean"
+                            assert extracted_text is None or isinstance(
+                                extracted_text, str
+                            ), "extracted_text should be string or None"
+
+                        elif event_type == "analysis":
                             ocr_result = event.get("ocr_result", "")
                             match_status = event.get("match_status", False)
                             message = event.get("message", "")
@@ -69,9 +80,18 @@ async def test_ocr_integration_basic() -> None:
                         pytest.fail(f"Invalid JSON received: {event_data}")
 
             # Verify workflow execution
+            assert text_extraction_event is not None, "Should have received text extraction event"
             assert len(ocr_events) > 0, "Should have at least one OCR event"
             assert len(image_urls) > 0, "Should have at least one image generated"
             assert workflow_completed, "Workflow should complete (success or timeout)"
+
+            # Verify text extraction worked
+            if text_extraction_event:
+                has_intended_text = text_extraction_event.get("has_intended_text", False)
+                extracted_text = text_extraction_event.get("extracted_text")
+                if has_intended_text:
+                    assert extracted_text is not None, "Should have extracted text when has_intended_text is True"
+                    assert extracted_text.strip() != "", "Extracted text should not be empty"
 
             # Verify OCR results are meaningful
             for ocr_event in ocr_events:
@@ -89,7 +109,6 @@ async def test_ocr_perfect_match_scenario() -> None:
     # Use a very simple text that might match
     payload = {
         "prompt": "Large bold text saying 'HELLO'",
-        "intended_text": "HELLO",
     }
 
     async with httpx.AsyncClient(timeout=120.0) as client:
@@ -132,10 +151,9 @@ async def test_ocr_error_handling() -> None:
     """Test OCR integration handles errors gracefully."""
     url = "http://localhost:8000/api/generate"
 
-    # Test with empty intended text (edge case)
+    # Test with a prompt that has no intended text (edge case)
     payload = {
-        "prompt": "A colorful abstract image",
-        "intended_text": "",
+        "prompt": "A colorful abstract image with no text",
     }
 
     async with httpx.AsyncClient(timeout=60.0) as client:
@@ -144,14 +162,91 @@ async def test_ocr_error_handling() -> None:
             assert response.status_code == 200
 
             events_received = []
+            text_extraction_received = False
+            workflow_error_received = False
+
             async for line in response.aiter_lines():
                 if line.startswith("data: "):
                     try:
                         event = json.loads(line[6:])
-                        events_received.append(event.get("type"))
+                        event_type = event.get("type")
+                        events_received.append(event_type)
+
+                        if event_type == "text_extraction":
+                            text_extraction_received = True
+                            has_intended_text = event.get("has_intended_text", True)
+                            # For a prompt with no text, should extract None or empty
+                            assert not has_intended_text or event.get("extracted_text") is None
+
+                        elif event_type == "workflow_error":
+                            workflow_error_received = True
+                            # Should get error when no intended text is found
+                            error_message = event.get("error_message", "")
+                            assert "no intended text" in error_message.lower()
+
                     except json.JSONDecodeError:
                         pass
 
-            # Should still follow basic workflow structure
-            assert "iteration_start" in events_received
-            assert "stream_end" in events_received
+            # Should follow basic workflow structure
+            assert text_extraction_received, "Should receive text extraction event"
+            assert "stream_end" in events_received, "Should receive stream end event"
+            # May receive workflow error if no intended text is detected
+            if workflow_error_received:
+                assert "workflow_error" in events_received
+
+
+@pytest.mark.asyncio
+async def test_parallel_execution_timing() -> None:
+    """Test that text extraction and image generation run in parallel."""
+    url = "http://localhost:8000/api/generate"
+
+    payload = {
+        "prompt": "A poster with 'TEST MESSAGE' in large letters",
+    }
+
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        async with client.stream("POST", url, json=payload) as response:
+            assert response.status_code == 200
+
+            iteration_start_time = None
+            text_extraction_time = None
+            image_generated_time = None
+
+            async for line in response.aiter_lines():
+                if line.startswith("data: "):
+                    try:
+                        event = json.loads(line[6:])
+                        event_type = event.get("type")
+                        timestamp = event.get("timestamp")
+
+                        if event_type == "iteration_start":
+                            iteration_start_time = timestamp
+
+                        elif event_type == "text_extraction":
+                            text_extraction_time = timestamp
+                            # Should have extracted text from the prompt
+                            extracted_text = event.get("extracted_text")
+                            has_intended_text = event.get("has_intended_text", False)
+                            assert has_intended_text, "Should detect intended text in prompt"
+                            assert (
+                                extracted_text == "TEST MESSAGE"
+                            ), f"Should extract 'TEST MESSAGE', got '{extracted_text}'"
+
+                        elif event_type == "image_generated":
+                            image_generated_time = timestamp
+
+                        elif event_type in ["workflow_complete", "workflow_timeout", "workflow_error"]:
+                            # Stop processing after workflow ends
+                            break
+
+                    except json.JSONDecodeError:
+                        pass
+
+            # Verify parallel execution - both events should happen close to each other
+            # and after iteration start
+            assert iteration_start_time is not None, "Should have iteration start timestamp"
+            assert text_extraction_time is not None, "Should have text extraction timestamp"
+            assert image_generated_time is not None, "Should have image generation timestamp"
+
+            # Both text extraction and image generation should complete within reasonable time
+            # The exact order may vary based on which completes first

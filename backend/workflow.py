@@ -187,6 +187,13 @@ async def generate_workflow_events(workflow_id: str, prompt: str) -> AsyncGenera
                                     "timestamp": datetime.utcnow().isoformat() + "Z",
                                 }
                                 yield f"data: {json.dumps(error_event)}\n\n"
+
+                                # Always end with stream_end event even on error
+                                end_event = {
+                                    "type": SSEEventType.STREAM_END,
+                                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                                }
+                                yield f"data: {json.dumps(end_event)}\n\n"
                                 return
 
                         elif task == image_event_task:
