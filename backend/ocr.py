@@ -22,9 +22,7 @@ class OCRProcessor:
 
         if api_key:
             # Use API key authentication
-            self.client = vision.ImageAnnotatorClient(
-                client_options={"api_key": api_key}
-            )
+            self.client = vision.ImageAnnotatorClient(client_options={"api_key": api_key})
         else:
             # Fall back to application default credentials
             self.client = vision.ImageAnnotatorClient()

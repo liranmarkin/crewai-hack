@@ -15,7 +15,6 @@ def test_generate_endpoint() -> None:
     url = "http://localhost:8000/api/generate"
     payload = {
         "prompt": "A birthday poster with balloons and 'HAPPY BIRTHDAY' text",
-        "intended_text": "HAPPY BIRTHDAY",
     }
 
     print(f"🚀 Sending request to {url}")
@@ -56,16 +55,20 @@ def test_generate_endpoint() -> None:
                     print(f"📡 [{timestamp}] {event_type.upper()}")
 
                     # Log specific event details
-                    if event_type == "iteration_start":
+                    if event_type == "text_extraction":
+                        extracted_text = event.get("extracted_text")
+                        has_intended_text = event.get("has_intended_text")
+                        print(f"   Extracted intended text: '{extracted_text}'")
+                        print(f"   Has intended text: {has_intended_text}")
+
+                    elif event_type == "iteration_start":
                         iteration = event.get("iteration")
                         print(f"   Starting iteration {iteration}")
 
                     elif event_type == "image_generated":
                         image_url = event.get("image_url")
                         iteration = event.get("iteration")
-                        print(
-                            f"   Image generated for iteration {iteration}: {image_url}"
-                        )
+                        print(f"   Image generated for iteration {iteration}: {image_url}")
 
                     elif event_type == "analysis":
                         ocr_result = event.get("ocr_result")
@@ -89,9 +92,7 @@ def test_generate_endpoint() -> None:
                     elif event_type == "workflow_timeout":
                         total_iterations = event.get("total_iterations")
                         last_image_url = event.get("last_image_url")
-                        print(
-                            f"   Workflow timed out after {total_iterations} iterations"
-                        )
+                        print(f"   Workflow timed out after {total_iterations} iterations")
                         print(f"   Last image URL: {last_image_url}")
                         final_image_url = last_image_url
 

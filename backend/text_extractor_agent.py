@@ -42,8 +42,7 @@ class TextExtractorAgent:
         # Create the text extraction agent
         self.agent = Agent(
             role="Text Extractor",
-            goal="Extract the exact text that should appear in the generated "
-            "image from the user's prompt",
+            goal="Extract the exact text that should appear in the generated " "image from the user's prompt",
             backstory=backstory,
             verbose=False,
             allow_delegation=False,
@@ -60,17 +59,14 @@ class TextExtractorAgent:
             ExtractedText object with the extracted text or None if no text found
         """
         # Load the task description template from file
-        task_prompt_file = (
-            Path(__file__).parent / "prompts" / "text_extractor_task_prompt.txt"
-        )
+        task_prompt_file = Path(__file__).parent / "prompts" / "text_extractor_task_prompt.txt"
         with open(task_prompt_file, encoding="utf-8") as f:
             task_template = f.read().strip()
 
         # Create a task for text extraction
         task = Task(
             description=task_template.format(prompt=prompt),
-            expected_output="The exact text to appear in the image, or "
-            "NO_INTENDED_TEXT if none",
+            expected_output="The exact text to appear in the image, or " "NO_INTENDED_TEXT if none",
             agent=self.agent,
         )
 
