@@ -30,9 +30,9 @@ export function IterationHistory({ iterations }: IterationHistoryProps) {
   if (iterations.length === 0) {
     return (
       <div className="text-center py-8">
-        <h2 className="text-lg font-semibold mb-2">Iterations</h2>
-        <p className="text-gray-500">
-          No iterations yet. Start by running your prompt.
+        <h2 className="text-lg font-semibold mb-2 text-gray-900" style={{ fontFamily: 'var(--font-space-grotesk)' }}>Workflow</h2>
+        <p className="text-gray-600">
+          No workflow yet. Generate an image to start.
         </p>
       </div>
     );
@@ -40,7 +40,7 @@ export function IterationHistory({ iterations }: IterationHistoryProps) {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold mb-6">Iterations</h2>
+      <h2 className="text-lg font-semibold mb-6 text-gray-900" style={{ fontFamily: 'var(--font-space-grotesk)' }}>Workflow</h2>
       <div className="space-y-8">
         {iterations.map((iteration, index) => {
           const isExpanded = expandedIterations.includes(iteration.id);
@@ -52,12 +52,12 @@ export function IterationHistory({ iterations }: IterationHistoryProps) {
                 {/* Iteration number badge */}
                 <div className="flex-shrink-0 mr-4">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium text-white ${
                       iteration.isMatch === true
-                        ? 'bg-green-100 text-green-600'
+                        ? 'bg-green-600'
                         : iteration.isMatch === false
-                        ? 'bg-red-100 text-red-600'
-                        : 'bg-gray-100 text-gray-600'
+                        ? 'bg-red-600'
+                        : 'bg-gray-600'
                     }`}
                   >
                     #{iteration.id}
@@ -69,15 +69,15 @@ export function IterationHistory({ iterations }: IterationHistoryProps) {
                     {/* Image thumbnail */}
                     <div className="flex-shrink-0">
                       <div 
-                        className="border border-gray-200 rounded-md overflow-hidden w-48 h-36 bg-gray-50 cursor-pointer hover:shadow-lg transition-shadow"
+                        className="border border-gray-200 rounded-md overflow-hidden w-64 h-48 bg-gray-50 cursor-pointer hover:shadow-lg transition-shadow"
                         onClick={() => iteration.imageUrl && setSelectedImage(iteration.imageUrl)}
                       >
                         {iteration.imageUrl ? (
                           <Image
                             src={iteration.imageUrl}
                             alt={`Iteration ${iteration.id}`}
-                            width={192}
-                            height={144}
+                            width={256}
+                            height={192}
                             className="w-full h-full object-cover"
                             unoptimized
                           />
@@ -103,11 +103,11 @@ export function IterationHistory({ iterations }: IterationHistoryProps) {
                           )}
                           <div className="flex items-center">
                             {iteration.isMatch === true ? (
-                              <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                              <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
                             ) : iteration.isMatch === false ? (
-                              <XCircle className="w-5 h-5 text-red-500 mr-2" />
+                              <XCircle className="w-5 h-5 text-red-600 mr-2" />
                             ) : (
-                              <div className="w-5 h-5 bg-gray-300 rounded-full mr-2 animate-pulse" />
+                              <div className="w-5 h-5 bg-gray-600 rounded-full mr-2 animate-pulse" />
                             )}
                             <p
                               className={`font-medium ${
@@ -119,10 +119,10 @@ export function IterationHistory({ iterations }: IterationHistoryProps) {
                               }`}
                             >
                               {iteration.isMatch === true
-                                ? 'Success'
+                                ? 'Match'
                                 : iteration.isMatch === false
                                 ? 'Mismatch'
-                                : 'Processing...'}
+                                : 'Analyzing...'}
                             </p>
                           </div>
                         </button>
@@ -130,31 +130,31 @@ export function IterationHistory({ iterations }: IterationHistoryProps) {
                         {isExpanded && (
                           <div className="ml-6 space-y-3">
                             {iteration.prompt && (
-                              <div className="bg-blue-50 p-3 rounded-md">
+                              <div className="bg-white p-3 rounded-md border border-gray-200">
                                 <p className="text-sm text-gray-600">
-                                  <span className="font-medium text-blue-800">Image Prompt:</span>
+                                  <span className="font-medium text-gray-900">Image Prompt:</span>
                                 </p>
-                                <p className="text-sm text-blue-700 mt-1">
+                                <p className="text-sm mt-1 text-gray-900">
                                   {iteration.prompt}
                                 </p>
                               </div>
                             )}
                             {iteration.extractedText && (
-                              <div className="bg-gray-50 p-3 rounded-md">
+                              <div className="bg-white p-3 rounded-md border border-gray-200">
                                 <p className="text-sm text-gray-600">
-                                  <span className="font-medium text-gray-800">OCR Result:</span>
+                                  <span className="font-medium text-gray-900">OCR read:</span>
                                 </p>
-                                <p className="text-sm text-gray-700 mt-1">
+                                <p className="text-sm mt-1 text-gray-900" style={{ fontFamily: 'var(--font-jetbrains-mono)' }}>
                                   &quot;{iteration.extractedText}&quot;
                                 </p>
                               </div>
                             )}
                             {iteration.feedback && (
-                              <div className="bg-gray-50 p-3 rounded-md">
+                              <div className="bg-white p-3 rounded-md border border-blue-600">
                                 <p className="text-sm text-gray-600">
-                                  <span className="font-medium text-gray-800">Reasoning:</span>
+                                  <span className="font-medium text-blue-600">Analysis:</span>
                                 </p>
-                                <p className="text-sm text-gray-700 mt-1">
+                                <p className="text-sm mt-1 text-gray-900">
                                   {iteration.feedback}
                                 </p>
                               </div>

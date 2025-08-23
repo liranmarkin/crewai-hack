@@ -44,21 +44,18 @@ export function InputForm({ onSubmit, workflowState, onReset }: InputFormProps) 
   return (
     <div className="p-6">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold">Input</h2>
+        <h2 className="text-lg font-semibold text-gray-900" style={{ fontFamily: 'var(--font-space-grotesk)' }}>Input</h2>
       </div>
 
       <form onSubmit={handleSubmit} suppressHydrationWarning>
         <div className="mb-4">
-          <div className="flex items-center mb-2">
-            <label htmlFor="prompt" className="font-medium text-gray-700">
-              Prompt
-            </label>
-            <Info className="w-4 h-4 text-gray-400 ml-1" />
-          </div>
+          <label htmlFor="prompt" className="block font-medium mb-2 text-gray-900">
+            Prompt
+          </label>
           <textarea
             id="prompt"
-            className="w-full border border-gray-300 rounded-md p-3 min-h-[100px] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-            placeholder="Describe the image you want to generate..."
+            className="w-full border border-gray-300 rounded-md p-3 min-h-[100px] resize-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+            placeholder="A poster with bold text..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             disabled={workflowState.isGenerating}
@@ -69,15 +66,15 @@ export function InputForm({ onSubmit, workflowState, onReset }: InputFormProps) 
         <div className="mb-6">
           <label
             htmlFor="intendedText"
-            className="block font-medium text-gray-700 mb-2"
+            className="block font-medium mb-2 text-gray-900"
           >
             Intended Text
           </label>
           <input
             id="intendedText"
             type="text"
-            className="w-full border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Text that should appear in the image..."
+            className="w-full border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+            placeholder="Hackathon 2025"
             value={intendedText}
             onChange={(e) => setIntendedText(e.target.value)}
             disabled={workflowState.isGenerating}
@@ -89,7 +86,7 @@ export function InputForm({ onSubmit, workflowState, onReset }: InputFormProps) 
           <button
             type="button"
             onClick={handleReset}
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+            className="px-4 py-2 border border-blue-600 rounded-md bg-white text-blue-600 hover:bg-blue-50 disabled:opacity-50"
             disabled={workflowState.isGenerating}
           >
             Reset
@@ -97,9 +94,9 @@ export function InputForm({ onSubmit, workflowState, onReset }: InputFormProps) 
           
           <button
             type="submit"
-            className={`px-4 py-2 rounded-md text-white flex items-center ${
-              workflowState.isGenerating || !isFormValid
-                ? 'bg-gray-400 cursor-not-allowed' 
+            className={`px-4 py-2 rounded-md text-white flex items-center disabled:opacity-50 ${
+              workflowState.isGenerating || !isFormValid 
+                ? 'bg-gray-600 cursor-not-allowed' 
                 : 'bg-blue-600 hover:bg-blue-700'
             }`}
             disabled={workflowState.isGenerating || !isFormValid}
@@ -112,7 +109,7 @@ export function InputForm({ onSubmit, workflowState, onReset }: InputFormProps) 
             ) : (
               <>
                 <Play className="w-4 h-4 mr-2" />
-                <span>Run</span>
+                <span>Generate</span>
               </>
             )}
           </button>
