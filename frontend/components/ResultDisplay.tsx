@@ -20,7 +20,7 @@ export function ResultDisplay({ workflowState }: ResultDisplayProps) {
   const getStatusColor = () => {
     if (isGenerating) return 'bg-blue-100 text-blue-600';
     if (isComplete && finalResult?.success) return 'bg-green-100 text-green-600';
-    if (isComplete && !finalResult?.success) return 'bg-yellow-100 text-yellow-600';
+    if (isComplete && !finalResult?.success) return 'bg-red-100 text-red-600';
     return 'bg-gray-100 text-gray-600';
   };
 
@@ -61,18 +61,6 @@ export function ResultDisplay({ workflowState }: ResultDisplayProps) {
               unoptimized
             />
             
-            {isComplete && finalResult?.success && (
-              <div className="absolute top-2 right-2 bg-green-100 text-green-800 px-3 py-1 rounded-full flex items-center text-sm">
-                <CheckCircle className="w-4 h-4 mr-1" />
-                Success
-              </div>
-            )}
-            
-            {isComplete && !finalResult?.success && (
-              <div className="absolute top-2 right-2 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full flex items-center text-sm">
-                Timeout
-              </div>
-            )}
           </>
         )}
       </div>
