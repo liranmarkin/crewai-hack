@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 
 from image_generation import get_image_generator
 from models import GenerateRequest, SSEEventType
+from ocr import extract_text_from_image
 
 app = FastAPI(title="Text-Aware Image Generation API")
 
@@ -99,12 +100,21 @@ async def generate_workflow_events(
         }
         yield f"data: {json.dumps(event)}\n\n"
 
-        # Send OCR complete event (mock for now)
+        # Perform OCR on the generated image
+        ocr_result = extract_text_from_image(image_path)
+
+        # Check if OCR result matches intended text
+        # Clean up whitespace and normalize for comparison
+        cleaned_ocr = " ".join(ocr_result.split()).upper()
+        cleaned_intended = " ".join(intended_text.split()).upper()
+        match_status = cleaned_ocr == cleaned_intended
+
+        # Send OCR complete event
         event = {
             "type": SSEEventType.OCR_COMPLETE,
             "iteration": 1,
-            "ocr_result": intended_text,  # For now, assume perfect match
-            "match_status": True,
+            "ocr_result": ocr_result,
+            "match_status": match_status,
             "timestamp": datetime.utcnow().isoformat() + "Z",
         }
         yield f"data: {json.dumps(event)}\n\n"
@@ -112,9 +122,9 @@ async def generate_workflow_events(
         # Send workflow complete event
         event = {
             "type": SSEEventType.WORKFLOW_COMPLETE,
-            "success": True,
+            "success": match_status,
             "final_image_url": f"/api/images/{image_id}.png",
-            "ocr_text": intended_text,
+            "ocr_text": ocr_result,
             "total_iterations": 1,
             "timestamp": datetime.utcnow().isoformat() + "Z",
         }
