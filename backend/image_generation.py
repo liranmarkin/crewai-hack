@@ -21,27 +21,22 @@ class ImageGenerator:
         self.images_dir = Path("generated_images")
         self.images_dir.mkdir(exist_ok=True)
 
-    async def generate_image(self, prompt: str, intended_text: str) -> tuple[str, str]:
+    async def generate_image(self, prompt: str) -> tuple[str, str]:
         """
         Generate an image using OpenAI's DALL-E 3 API.
 
         Args:
             prompt: The image generation prompt
-            intended_text: The text that should appear in the image
 
         Returns:
             tuple: (image_id, image_path) where image_id is used in the API
         """
-        # Enhance prompt to include the intended text
-        enhanced_prompt = (
-            f"{prompt}. The image must clearly display the text: '{intended_text}'"
-        )
 
         try:
             # Generate image using DALL-E 3
             response = self.client.images.generate(
                 model="dall-e-3",
-                prompt=enhanced_prompt,
+                prompt=prompt,
                 n=1,
                 size="1024x1024",
                 quality="standard",
