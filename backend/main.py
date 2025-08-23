@@ -3,10 +3,7 @@ from collections.abc import AsyncGenerator
 from datetime import datetime
 from uuid import uuid4
 
-from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Response
-
-load_dotenv()
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 
