@@ -8,7 +8,7 @@ tasks:
 
   install:
     desc: Install all dependencies
-    deps: [frontend:install, backend:setup]
+    deps: [frontend:install, backend:install]
 
   # Frontend tasks
   frontend:dev:
@@ -48,44 +48,81 @@ tasks:
       - pnpm run lint -- --fix
 
   # Backend tasks
-  backend:setup:
-    desc: Create virtual environment and install dependencies
+  backend:install:
+    desc: Install backend dependencies with uv
     dir: backend
     cmds:
-      - python3 -m venv venv
-      - source venv/bin/activate && pip install -r requirements.txt
+      - uv sync --dev
+
+  backend:setup-env:
+    desc: Setup environment variables for backend
+    dir: backend
+    cmds:
+      - cp ../.env .env 2>/dev/null || echo "No .env file found in main directory"
 
   backend:dev:
     desc: Start the backend development server
     dir: backend
+    deps: [backend:setup-env]
     cmds:
-      - source venv/bin/activate && python3 -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+      - uv run uvicorn main:app --reload --port 8000
 
-  backend:install:
-    desc: Install backend dependencies (requires existing venv)
+  backend:run:
+    desc: Start the backend server (alias for dev)
     dir: backend
+    deps: [backend:setup-env]
     cmds:
-      - source venv/bin/activate && pip install -r requirements.txt
+      - uv run uvicorn main:app --reload --port 8000
 
   backend:test:
     desc: Run backend tests
     dir: backend
+    deps: [backend:setup-env]
     cmds:
-      - source venv/bin/activate && pytest
+      - uv run pytest
 
   backend:lint:
     desc: Run linting on backend code
     dir: backend
     cmds:
-      - source venv/bin/activate && flake8 .
-      - source venv/bin/activate && black --check .
+      - uv run ruff check .
+      - uv run black --check .
 
   backend:lint-fix:
-    desc: Fix linting issues in backend code
+    desc: Fix linting issues in backend code (format)
     dir: backend
     cmds:
-      - source venv/bin/activate && black .
-      - source venv/bin/activate && isort .
+      - uv run black .
+      - uv run ruff check --fix .
+
+  backend:format:
+    desc: Format backend code (alias for lint-fix)
+    dir: backend
+    cmds:
+      - uv run black .
+      - uv run ruff check --fix .
+
+  backend:type-check:
+    desc: Run type checking on backend code
+    dir: backend
+    cmds:
+      - uv run mypy .
+
+  backend:check:
+    desc: Run all checks (lint + type-check)
+    dir: backend
+    deps: [backend:lint, backend:type-check]
+
+  backend:clean:
+    desc: Clean backend cache files
+    dir: backend
+    cmds:
+      - find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+      - find . -type f -name "*.pyc" -delete
+      - find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+      - find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
+      - find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
+      - rm -rf .env
 
   # Production/deployment tasks
   build:
@@ -95,9 +132,13 @@ tasks:
   # Utility tasks
   clean:
     desc: Clean all build artifacts and dependencies
+    deps: [frontend:clean, backend:clean]
+
+  frontend:clean:
+    desc: Clean frontend build artifacts
+    dir: frontend
     cmds:
-      - rm -rf frontend/node_modules frontend/.next frontend/pnpm-lock.yaml
-      - rm -rf backend/__pycache__ backend/*.pyc backend/.pytest_cache backend/venv
+      - rm -rf node_modules .next pnpm-lock.yaml
 
   setup:
     desc: Initial project setup
