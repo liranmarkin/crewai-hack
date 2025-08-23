@@ -2,28 +2,31 @@ import os
 from pathlib import Path
 from uuid import uuid4
 
+import fal_client
 import httpx
 from dotenv import load_dotenv
-from openai import OpenAI
 
 load_dotenv()
 
 
 class ImageGenerator:
     def __init__(self, api_key: str | None = None):
-        api_key = api_key or os.environ.get("OPENAI_API_KEY")
+        api_key = api_key or os.environ.get("FAL_KEY")
         if not api_key:
             raise ValueError(
-                "OpenAI API key is required. Set OPENAI_API_KEY environment variable "
+                "FAL.AI API key is required. Set FAL_KEY environment variable "
                 "or pass api_key to ImageGenerator"
             )
-        self.client = OpenAI(api_key=api_key)
+
+        # Configure fal_client with API key
+        os.environ["FAL_KEY"] = api_key
+
         self.images_dir = Path("generated_images")
         self.images_dir.mkdir(exist_ok=True)
 
     async def generate_image(self, prompt: str) -> tuple[str, str]:
         """
-        Generate an image using OpenAI's DALL-E 3 API.
+        Generate an image using FAL.AI's FLUX Pro 1.1 API.
 
         Args:
             prompt: The image generation prompt
@@ -33,20 +36,25 @@ class ImageGenerator:
         """
 
         try:
-            # Generate image using DALL-E 3
-            response = self.client.images.generate(
-                model="dall-e-3",
-                prompt=prompt,
-                n=1,
-                size="1024x1024",
-                quality="standard",
-                response_format="url",
+            # Generate image using FLUX Pro 1.1
+            result = fal_client.run(
+                "fal-ai/flux-pro/v1.1",
+                arguments={
+                    "prompt": prompt,
+                    "image_size": "landscape_4_3",  # Good balance for text generation
+                    "num_images": 1,
+                    "safety_tolerance": "2",
+                    "enable_safety_checker": True,
+                },
             )
 
-            # Get the image URL
-            image_url = response.data[0].url
+            # Get the image URL from response
+            if not result or "images" not in result or not result["images"]:
+                raise Exception("No image returned from FAL.AI API")
+
+            image_url = result["images"][0]["url"]
             if not image_url:
-                raise Exception("No image URL returned from OpenAI API")
+                raise Exception("No image URL returned from FAL.AI API")
 
             # Generate unique image ID
             image_id = str(uuid4())

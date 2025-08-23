@@ -7,7 +7,7 @@ dependencies = [
     "fastapi==0.115.5",
     "uvicorn[standard]==0.32.1",
     "python-multipart==0.0.18",
-    "openai==1.57.4",
+    "fal-client",
     "httpx==0.28.1",
     "requests==2.32.3",
     "google-cloud-vision>=3.10.2",
