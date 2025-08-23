@@ -109,7 +109,7 @@ async def generate_workflow_events(
 ) -> AsyncGenerator[str, None]:
     """Generate Server-Sent Events for workflow progress."""
 
-    max_iterations = 5
+    max_iterations = 10
     current_prompt = prompt
     final_image_url = None
     final_ocr_text = ""
@@ -149,12 +149,22 @@ async def generate_workflow_events(
             cleaned_intended = " ".join(intended_text.split()).upper()
             match_status = cleaned_ocr == cleaned_intended
 
-            # Send OCR complete event
+            # Generate reasoning message
+            if match_status:
+                message = (
+                    f"OCR detected '{ocr_result}' which matches expected "
+                    f"'{intended_text}'. Success!"
+                )
+            else:
+                message = generate_reasoning(ocr_result, intended_text, iteration)
+
+            # Send combined analysis event
             event = {
-                "type": SSEEventType.OCR_COMPLETE,
+                "type": SSEEventType.ANALYSIS,
                 "iteration": iteration,
                 "ocr_result": ocr_result,
                 "match_status": match_status,
+                "message": message,
                 "timestamp": datetime.utcnow().isoformat() + "Z",
             }
             yield f"data: {json.dumps(event)}\n\n"
@@ -168,16 +178,6 @@ async def generate_workflow_events(
                 success = True
                 break
             elif iteration < max_iterations:
-                # Send reasoning event immediately after OCR mismatch
-                reasoning = generate_reasoning(ocr_result, intended_text, iteration)
-                event = {
-                    "type": SSEEventType.REASONING,
-                    "iteration": iteration,
-                    "reasoning": reasoning,
-                    "timestamp": datetime.utcnow().isoformat() + "Z",
-                }
-                yield f"data: {json.dumps(event)}\n\n"
-
                 # Adjust prompt for next iteration
                 current_prompt = adjust_prompt_for_retry(
                     prompt, intended_text, ocr_result, iteration

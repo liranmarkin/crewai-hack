@@ -1,0 +1,20 @@
+Analyze this image generation prompt and extract ONLY the exact text that should appear in the generated image.
+
+Prompt: "{prompt}"
+
+Instructions:
+1. Look for text that should be displayed IN the image (not descriptions OF the image)
+2. Common patterns include:
+   - Text in quotes
+   - Text after "with text:", "saying:", "that says:", "displaying:"
+   - Text for signs, posters, banners, memes, etc.
+3. If no specific text should appear in the image, return "NO_INTENDED_TEXT"
+4. Return ONLY the extracted text, nothing else
+5. Do not include quotes or extra formatting
+
+Examples:
+- "A poster saying 'Happy Birthday'" → Happy Birthday
+- "Sign with text 'SALE 50% OFF'" → SALE 50% OFF
+- "Meme with 'This is fine' text" → This is fine
+- "A beautiful sunset over mountains" → NO_INTENDED_TEXT
+- "Banner displaying 'Welcome Home'" → Welcome Home

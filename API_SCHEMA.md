@@ -22,19 +22,18 @@ The stream starts immediately with `iteration_start` event and continues with wo
 ### Success Path (Single Iteration)
 1. `iteration_start` (iteration: 1, prompt: original user prompt)
 2. `image_generated` (iteration: 1, image_url)
-3. `ocr_complete` (iteration: 1, ocr_result, match_status: true)
+3. `analysis` (iteration: 1, ocr_result, match_status: true, message)
 4. `workflow_complete` (success: true)
 5. `stream_end`
 
 ### Failure Path with Retry Loop
 1. `iteration_start` (iteration: 1, prompt: original user prompt)
 2. `image_generated` (iteration: 1, image_url)
-3. `ocr_complete` (iteration: 1, ocr_result, match_status: false)
-4. `reasoning` (iteration: 1, message explaining OCR mismatch and retry strategy)
-5. `iteration_start` (iteration: 2, prompt: adjusted prompt based on OCR feedback)
-6. `image_generated` (iteration: 2, image_url)
-7. `ocr_complete` (iteration: 2, ocr_result, match_status)
-8. ... (loop continues until match_status: true or max iterations/timeout)
+3. `analysis` (iteration: 1, ocr_result, match_status: false, message explaining OCR mismatch and retry strategy)
+4. `iteration_start` (iteration: 2, prompt: adjusted prompt based on OCR feedback)
+5. `image_generated` (iteration: 2, image_url)
+6. `analysis` (iteration: 2, ocr_result, match_status, message)
+7. ... (loop continues until match_status: true or max iterations/timeout)
 9. Either:
    - `workflow_complete` (success: true) if match found
    - `workflow_timeout` if max retries reached
@@ -64,22 +63,13 @@ The stream starts immediately with `iteration_start` event and continues with wo
 }
 ```
 
-**ocr_complete**
+**analysis**
 ```json
 {
-  "type": "ocr_complete",
+  "type": "analysis",
   "iteration": 1,
   "ocr_result": "Hackethon 205",
   "match_status": false,
-  "timestamp": "2025-01-23T10:30:18Z"
-}
-```
-
-**reasoning**
-```json
-{
-  "type": "reasoning",
-  "iteration": 1,
   "message": "OCR detected 'Hackethon 205' but expected 'Hackathon 2025'. Retrying with emphasis on correct spelling...",
   "timestamp": "2025-01-23T10:30:19Z"
 }
@@ -130,8 +120,8 @@ The stream starts immediately with `iteration_start` event and continues with wo
 ### Iteration Loop Logic
 - Maximum 8 iterations per workflow
 - 5-minute total timeout
-- Each failed OCR result triggers a `reasoning` event explaining why it failed
-- The reasoning event contains strategy for next iteration (adjusted prompt)
+- Each OCR result triggers an `analysis` event with OCR results, match status, and reasoning
+- The analysis event contains strategy for next iteration when match fails (adjusted prompt)
 - The `iteration_start` event includes the prompt that will be used for image generation in that iteration
 - For iteration 1: uses the original user prompt
 - For iterations 2+: uses an adjusted prompt based on OCR feedback from previous iteration
@@ -147,11 +137,12 @@ The stream starts immediately with `iteration_start` event and continues with wo
 - Leading/trailing whitespace is ignored
 - Match must be exact after normalization
 
-### Reasoning Event Purpose
-- Explains why current iteration failed
-- Describes what was detected vs what was expected
-- Indicates strategy for next attempt (e.g. "emphasizing correct spelling", "adjusting text size")
+### Analysis Event Purpose
+- Contains OCR results and match status for current iteration
+- For failed matches: explains why iteration failed and describes what was detected vs expected
+- For failed matches: indicates strategy for next attempt (e.g. "emphasizing correct spelling", "adjusting text size")
+- For successful matches: confirms text detection success
 
 ## Enums
 
-**SSEEventType:** `iteration_start`, `image_generated`, `ocr_complete`, `reasoning`, `workflow_complete`, `workflow_timeout`, `workflow_error`, `stream_end`
+**SSEEventType:** `iteration_start`, `image_generated`, `analysis`, `workflow_complete`, `workflow_timeout`, `workflow_error`, `stream_end`

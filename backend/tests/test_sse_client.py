@@ -67,19 +67,14 @@ def test_generate_endpoint() -> None:
                             f"   Image generated for iteration {iteration}: {image_url}"
                         )
 
-                    elif event_type == "ocr_complete":
+                    elif event_type == "analysis":
                         ocr_result = event.get("ocr_result")
                         match_status = event.get("match_status")
-                        iteration = event.get("iteration")
-                        print(
-                            f"   OCR result for iteration {iteration}: "
-                            f"'{ocr_result}' (match: {match_status})"
-                        )
-
-                    elif event_type == "reasoning":
                         message = event.get("message")
                         iteration = event.get("iteration")
-                        print(f"   Reasoning for iteration {iteration}: {message}")
+                        print(f"   Analysis for iteration {iteration}:")
+                        print(f"   OCR result: '{ocr_result}' (match: {match_status})")
+                        print(f"   Message: {message}")
 
                     elif event_type == "workflow_complete":
                         success = event.get("success")

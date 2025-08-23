@@ -7,8 +7,7 @@ from pydantic import BaseModel
 class SSEEventType(str, Enum):
     ITERATION_START = "iteration_start"
     IMAGE_GENERATED = "image_generated"
-    OCR_COMPLETE = "ocr_complete"
-    REASONING = "reasoning"
+    ANALYSIS = "analysis"
     WORKFLOW_COMPLETE = "workflow_complete"
     WORKFLOW_TIMEOUT = "workflow_timeout"
     WORKFLOW_ERROR = "workflow_error"

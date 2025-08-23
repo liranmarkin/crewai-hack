@@ -34,24 +34,29 @@ async def test_ocr_integration_basic() -> None:
                         event = json.loads(event_data)
                         event_type = event.get("type", "unknown")
 
-                        if event_type == "ocr_complete":
+                        if event_type == "analysis":
                             ocr_result = event.get("ocr_result", "")
                             match_status = event.get("match_status", False)
+                            message = event.get("message", "")
                             ocr_events.append(
                                 {
                                     "ocr_result": ocr_result,
                                     "match_status": match_status,
+                                    "message": message,
                                     "iteration": event.get("iteration", 0),
                                 }
                             )
 
-                            # Verify OCR event structure
+                            # Verify analysis event structure
                             assert isinstance(
                                 ocr_result, str
                             ), "OCR result should be a string"
                             assert isinstance(
                                 match_status, bool
                             ), "Match status should be boolean"
+                            assert isinstance(
+                                message, str
+                            ), "Message should be a string"
 
                         elif event_type == "workflow_complete":
                             workflow_completed = True
@@ -113,7 +118,7 @@ async def test_ocr_perfect_match_scenario() -> None:
                         if event_type == "iteration_start":
                             total_iterations += 1
 
-                        elif event_type == "ocr_complete":
+                        elif event_type == "analysis":
                             match_status = event.get("match_status", False)
                             if match_status:
                                 found_perfect_match = True
