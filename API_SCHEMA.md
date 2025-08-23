@@ -11,19 +11,13 @@
 }
 ```
 
-**Response:**
-```json
-{
-  "workflow_id": "uuid",
-  "status": "processing",
-  "created_at": "2025-01-23T10:30:00Z"
-}
-```
+**Response:** Server-Sent Events stream (Content-Type: text/event-stream)
+The stream starts immediately with `iteration_start` event and continues with workflow progress events.
 
 ### GET /api/images/{image_id}
 **Response:** Binary image data (Content-Type: image/png)
 
-## Server-Sent Events Stream: GET /api/workflow/{workflow_id}/stream
+## Server-Sent Events Stream
 
 ### Event Types
 
@@ -108,7 +102,5 @@
 ```
 
 ## Enums
-
-**WorkflowStatus:** `processing`, `success`, `failed`, `timeout`
 
 **SSEEventType:** `iteration_start`, `image_generated`, `ocr_complete`, `reasoning`, `workflow_complete`, `workflow_timeout`, `workflow_error`, `stream_end`
