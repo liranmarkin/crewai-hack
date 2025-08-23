@@ -20,18 +20,18 @@ The stream starts immediately with `iteration_start` event and continues with wo
 ## Workflow Flow
 
 ### Success Path (Single Iteration)
-1. `iteration_start` (iteration: 1)
+1. `iteration_start` (iteration: 1, prompt: original user prompt)
 2. `image_generated` (iteration: 1, image_url)
 3. `ocr_complete` (iteration: 1, ocr_result, match_status: true)
 4. `workflow_complete` (success: true)
 5. `stream_end`
 
 ### Failure Path with Retry Loop
-1. `iteration_start` (iteration: 1)
+1. `iteration_start` (iteration: 1, prompt: original user prompt)
 2. `image_generated` (iteration: 1, image_url)
 3. `ocr_complete` (iteration: 1, ocr_result, match_status: false)
 4. `reasoning` (iteration: 1, message explaining OCR mismatch and retry strategy)
-5. `iteration_start` (iteration: 2)
+5. `iteration_start` (iteration: 2, prompt: adjusted prompt based on OCR feedback)
 6. `image_generated` (iteration: 2, image_url)
 7. `ocr_complete` (iteration: 2, ocr_result, match_status)
 8. ... (loop continues until match_status: true or max iterations/timeout)
@@ -49,6 +49,7 @@ The stream starts immediately with `iteration_start` event and continues with wo
 {
   "type": "iteration_start",
   "iteration": 1,
+  "prompt": "A poster for Hackathon, with clear, bold, readable text. Text: 'Hackathon 2025'.",
   "timestamp": "2025-01-23T10:30:01Z"
 }
 ```
@@ -131,6 +132,9 @@ The stream starts immediately with `iteration_start` event and continues with wo
 - 5-minute total timeout
 - Each failed OCR result triggers a `reasoning` event explaining why it failed
 - The reasoning event contains strategy for next iteration (adjusted prompt)
+- The `iteration_start` event includes the prompt that will be used for image generation in that iteration
+- For iteration 1: uses the original user prompt
+- For iterations 2+: uses an adjusted prompt based on OCR feedback from previous iteration
 - Loop continues until:
   - OCR text matches intended text (success)
   - Maximum iterations reached (timeout)

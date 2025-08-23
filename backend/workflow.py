@@ -123,6 +123,7 @@ async def generate_workflow_events(
             event = {
                 "type": SSEEventType.ITERATION_START,
                 "iteration": iteration,
+                "prompt": current_prompt,
                 "timestamp": datetime.utcnow().isoformat() + "Z",
             }
             yield f"data: {json.dumps(event)}\n\n"
