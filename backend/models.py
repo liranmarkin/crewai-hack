@@ -4,13 +4,6 @@ from pydantic import BaseModel
 
 
 # Enums
-class WorkflowStatus(str, Enum):
-    PROCESSING = "processing"
-    SUCCESS = "success"
-    FAILED = "failed"
-    TIMEOUT = "timeout"
-
-
 class SSEEventType(str, Enum):
     ITERATION_START = "iteration_start"
     IMAGE_GENERATED = "image_generated"
@@ -22,13 +15,7 @@ class SSEEventType(str, Enum):
     STREAM_END = "stream_end"
 
 
-# Request/Response Models
+# Request Models
 class GenerateRequest(BaseModel):
     prompt: str
     intended_text: str
-
-
-class GenerateResponse(BaseModel):
-    workflow_id: str
-    status: WorkflowStatus
-    created_at: str

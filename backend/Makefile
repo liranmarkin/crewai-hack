@@ -1,24 +1,21 @@
-.PHONY: install install-dev format lint type-check test clean run
+.PHONY: install format lint type-check test clean run test-client
 
 install:
-	pip install -r requirements.txt
-
-install-dev: install
-	pip install -r requirements-dev.txt
+	uv sync --dev
 
 format:
-	black .
-	ruff check --fix .
+	uv run black .
+	uv run ruff check --fix .
 
 lint:
-	ruff check .
-	black --check .
+	uv run ruff check .
+	uv run black --check .
 
 type-check:
-	mypy .
+	uv run mypy .
 
 test:
-	pytest
+	uv run pytest
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
@@ -26,8 +23,9 @@ clean:
 	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
+	rm -rf .venv
 
 run:
-	uvicorn main:app --reload --port 8000
+	uv run uvicorn main:app --reload --port 8000
 
 check: lint type-check

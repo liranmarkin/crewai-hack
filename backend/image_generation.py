@@ -47,6 +47,8 @@ class ImageGenerator:
 
             # Get the image URL
             image_url = response.data[0].url
+            if not image_url:
+                raise Exception("No image URL returned from OpenAI API")
 
             # Generate unique image ID
             image_id = str(uuid4())
