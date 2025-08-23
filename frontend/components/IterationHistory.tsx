@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { CheckCircle, XCircle, ChevronRight, ChevronDown } from 'lucide-react';
+import { CheckCircle, XCircle, ChevronRight, ChevronDown, X } from 'lucide-react';
 import { Iteration } from '@/lib/types';
 
 interface IterationHistoryProps {
@@ -9,6 +9,7 @@ interface IterationHistoryProps {
 
 export function IterationHistory({ iterations }: IterationHistoryProps) {
   const [expandedIterations, setExpandedIterations] = useState<number[]>([]);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // Auto-expand new iterations
   useEffect(() => {
@@ -67,7 +68,10 @@ export function IterationHistory({ iterations }: IterationHistoryProps) {
                   <div className="flex items-start gap-6">
                     {/* Image thumbnail */}
                     <div className="flex-shrink-0">
-                      <div className="border border-gray-200 rounded-md overflow-hidden w-48 h-36 bg-gray-50">
+                      <div 
+                        className="border border-gray-200 rounded-md overflow-hidden w-48 h-36 bg-gray-50 cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => iteration.imageUrl && setSelectedImage(iteration.imageUrl)}
+                      >
                         {iteration.imageUrl ? (
                           <Image
                             src={iteration.imageUrl}
@@ -174,6 +178,33 @@ export function IterationHistory({ iterations }: IterationHistoryProps) {
           );
         })}
       </div>
+
+      {/* Image Modal */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] p-4">
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute -top-2 -right-2 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="relative">
+              <Image
+                src={selectedImage}
+                alt="Full size image"
+                width={800}
+                height={600}
+                className="max-w-full max-h-[85vh] object-contain rounded-lg"
+                unoptimized
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
