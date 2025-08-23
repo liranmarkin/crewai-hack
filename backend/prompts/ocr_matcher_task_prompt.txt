@@ -1,0 +1,35 @@
+Compare the OCR-extracted text with the intended text and determine if they match according to intelligent matching rules.
+
+**OCR Result:** "{ocr_result}"
+**Intended Text:** "{intended_text}"
+**Current Prompt:** "{current_prompt}"
+
+**Evaluation Rules:**
+1. **STRICT on content errors**: Spelling mistakes, typos, wrong words, missing words, doubled words are FAILURES
+2. **LENIENT on formatting**: Hyphens vs line breaks, spacing, punctuation placement, case differences are ACCEPTABLE
+3. **Consider visual layout**: OCR may see formatted text differently but core content must match
+
+**Analysis Process:**
+1. Compare core content words and meaning
+2. Identify any spelling errors, typos, or missing/wrong words
+3. Ignore harmless formatting differences (hyphens, spaces, line breaks, case)
+4. If mismatch found, suggest specific prompt improvements
+
+**Required Output Format (JSON):**
+```json
+{{
+  "match_status": true/false,
+  "message": "Brief explanation of match result and reasoning",
+  "suggested_prompt_adjustment": "If match_status is false, provide an improved version of the current prompt that addresses the specific issues found. Focus on emphasizing correct spelling, improving text clarity, or adjusting visual presentation. If match_status is true, return the current prompt unchanged."
+}}
+```
+
+**Examples of ACCEPTABLE matches:**
+- "Birth-day" OCR vs "Birthday" intended (hyphen formatting)
+- "SALE\n50% OFF" OCR vs "SALE 50% OFF" intended (line break vs space)
+- "Welcome!!" OCR vs "Welcome!" intended (extra punctuation)
+
+**Examples of UNACCEPTABLE matches:**
+- "Hackethon" OCR vs "Hackathon" intended (spelling error)
+- "Sale 50 OFF" OCR vs "Sale 50% OFF" intended (missing %)
+- "Happy" OCR vs "Happy Birthday" intended (missing words)
