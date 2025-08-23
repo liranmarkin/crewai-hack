@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 # Enums
 class SSEEventType(str, Enum):
+    TEXT_EXTRACTION = "text_extraction"
     ITERATION_START = "iteration_start"
     IMAGE_GENERATED = "image_generated"
     ANALYSIS = "analysis"
@@ -17,4 +18,3 @@ class SSEEventType(str, Enum):
 # Request Models
 class GenerateRequest(BaseModel):
     prompt: str
-    intended_text: str

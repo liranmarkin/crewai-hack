@@ -15,7 +15,6 @@ def test_generate_endpoint() -> None:
     url = "http://localhost:8000/api/generate"
     payload = {
         "prompt": "A birthday poster with balloons and 'HAPPY BIRTHDAY' text",
-        "intended_text": "HAPPY BIRTHDAY",
     }
 
     print(f"🚀 Sending request to {url}")
@@ -56,7 +55,13 @@ def test_generate_endpoint() -> None:
                     print(f"📡 [{timestamp}] {event_type.upper()}")
 
                     # Log specific event details
-                    if event_type == "iteration_start":
+                    if event_type == "text_extraction":
+                        extracted_text = event.get("extracted_text")
+                        has_intended_text = event.get("has_intended_text")
+                        print(f"   Extracted intended text: '{extracted_text}'")
+                        print(f"   Has intended text: {has_intended_text}")
+
+                    elif event_type == "iteration_start":
                         iteration = event.get("iteration")
                         print(f"   Starting iteration {iteration}")
 

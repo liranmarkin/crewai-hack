@@ -44,7 +44,7 @@ async def generate_workflow(request: GenerateRequest) -> StreamingResponse:
     workflow_id = str(uuid4())
 
     return StreamingResponse(
-        generate_workflow_events(workflow_id, request.prompt, request.intended_text),
+        generate_workflow_events(workflow_id, request.prompt),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

@@ -3,6 +3,7 @@ Text-aware image generation workflow implementation.
 Contains the main business logic for iterative image generation with OCR verification.
 """
 
+import asyncio
 import json
 from collections.abc import AsyncGenerator
 from datetime import datetime
@@ -10,6 +11,7 @@ from datetime import datetime
 from image_generation import get_image_generator
 from models import SSEEventType
 from ocr import extract_text_from_image
+from text_extractor_agent import extract_intended_text
 
 
 def generate_reasoning(ocr_result: str, intended_text: str, iteration: int) -> str:
@@ -105,9 +107,10 @@ def adjust_prompt_for_retry(
 
 
 async def generate_workflow_events(
-    workflow_id: str, prompt: str, intended_text: str
+    workflow_id: str, prompt: str
 ) -> AsyncGenerator[str, None]:
     """Generate Server-Sent Events for workflow progress."""
+    # mypy: disable-error-code=dict-item
 
     max_iterations = 10
     current_prompt = prompt
@@ -116,29 +119,94 @@ async def generate_workflow_events(
     success = False
 
     try:
+        # Start text extraction in parallel (non-blocking)
+        loop = asyncio.get_event_loop()
+        text_extraction_task = loop.run_in_executor(None, extract_intended_text, prompt)
+
+        # Start image generator initialization immediately
         generator = get_image_generator()
+        intended_text = None  # Will be set when text extraction completes
 
         for iteration in range(1, max_iterations + 1):
             # Start iteration event
             event = {
                 "type": SSEEventType.ITERATION_START,
-                "iteration": iteration,
+                "iteration": iteration,  # type: ignore[dict-item]
                 "prompt": current_prompt,
                 "timestamp": datetime.utcnow().isoformat() + "Z",
             }
             yield f"data: {json.dumps(event)}\n\n"
 
-            # Generate the image
-            image_id, image_path = await generator.generate_image(current_prompt)
+            # Start both tasks in parallel (only on first iteration for text extraction)
+            if iteration == 1:
+                # Start text extraction task (runs in background)
+                async def send_text_extraction_event():
+                    extracted_text = await text_extraction_task
+                    event = {
+                        "type": SSEEventType.TEXT_EXTRACTION,
+                        "extracted_text": extracted_text,
+                        "has_intended_text": extracted_text is not None,
+                        "timestamp": datetime.utcnow().isoformat() + "Z",
+                    }
+                    return event, extracted_text
 
-            # Send image generated event
-            event = {
-                "type": SSEEventType.IMAGE_GENERATED,
-                "iteration": iteration,
-                "image_url": f"/api/images/{image_id}.png",
-                "timestamp": datetime.utcnow().isoformat() + "Z",
-            }
-            yield f"data: {json.dumps(event)}\n\n"
+                text_event_task = asyncio.create_task(send_text_extraction_event())
+
+            # Start image generation task (runs in background)
+            async def send_image_generated_event():
+                image_id, image_path = await generator.generate_image(current_prompt)
+                event = {
+                    "type": SSEEventType.IMAGE_GENERATED,
+                    "iteration": iteration,  # type: ignore[dict-item]
+                    "image_url": f"/api/images/{image_id}.png",
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                }
+                return event, image_id, image_path
+
+            image_event_task = asyncio.create_task(send_image_generated_event())
+
+            # Wait for both tasks to complete and send events as they finish
+            if iteration == 1:
+                # On first iteration, we need both text extraction and image generation
+                pending = {text_event_task, image_event_task}
+                image_data = None
+                text_data = None
+
+                while pending:
+                    done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+                    for task in done:
+                        if task == text_event_task:
+                            event, intended_text = await task
+                            yield f"data: {json.dumps(event)}\n\n"
+                            text_data = intended_text
+
+                            # If no intended text was detected, we can't proceed
+                            if intended_text is None:
+                                event = {
+                                    "type": SSEEventType.WORKFLOW_ERROR,
+                                    "error_message": (
+                                        "No intended text detected in prompt. "
+                                        "Please include specific text you want to appear in the "
+                                        "image."
+                                    ),
+                                    "iteration": iteration,  # type: ignore[dict-item]
+                                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                                }
+                                yield f"data: {json.dumps(event)}\n\n"
+                                return
+
+                        elif task == image_event_task:
+                            event, image_id, image_path = await task
+                            yield f"data: {json.dumps(event)}\n\n"
+                            image_data = (image_id, image_path)
+
+                # Both tasks completed, use the results
+                image_id, image_path = image_data
+                intended_text = text_data
+            else:
+                # On subsequent iterations, only wait for image generation
+                event, image_id, image_path = await image_event_task
+                yield f"data: {json.dumps(event)}\n\n"
 
             # Perform OCR on the generated image
             ocr_result = extract_text_from_image(image_path)
@@ -161,7 +229,7 @@ async def generate_workflow_events(
             # Send combined analysis event
             event = {
                 "type": SSEEventType.ANALYSIS,
-                "iteration": iteration,
+                "iteration": iteration,  # type: ignore[dict-item]
                 "ocr_result": ocr_result,
                 "match_status": match_status,
                 "message": message,
@@ -190,7 +258,7 @@ async def generate_workflow_events(
                 "success": True,
                 "final_image_url": final_image_url,
                 "ocr_text": final_ocr_text,
-                "total_iterations": iteration,
+                "total_iterations": iteration,  # type: ignore[dict-item]
                 "timestamp": datetime.utcnow().isoformat() + "Z",
             }
         else:
@@ -199,7 +267,7 @@ async def generate_workflow_events(
                 "success": False,
                 "final_image_url": final_image_url,
                 "ocr_text": final_ocr_text,
-                "total_iterations": max_iterations,
+                "total_iterations": max_iterations,  # type: ignore[dict-item]
                 "timestamp": datetime.utcnow().isoformat() + "Z",
             }
         yield f"data: {json.dumps(event)}\n\n"
@@ -209,7 +277,7 @@ async def generate_workflow_events(
         event = {
             "type": SSEEventType.WORKFLOW_ERROR,
             "error_message": str(e),
-            "iteration": 1,
+            "iteration": 1,  # type: ignore[dict-item]
             "timestamp": datetime.utcnow().isoformat() + "Z",
         }
         yield f"data: {json.dumps(event)}\n\n"
