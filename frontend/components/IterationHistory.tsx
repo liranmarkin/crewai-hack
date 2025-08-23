@@ -67,13 +67,12 @@ export function IterationHistory({ iterations }: IterationHistoryProps) {
                   <div className="flex items-start gap-6">
                     {/* Image thumbnail */}
                     <div className="flex-shrink-0">
-                      <p className="font-medium mb-2">Image</p>
-                      <div className="border border-gray-200 rounded-md overflow-hidden w-36 h-36 bg-gray-50">
+                      <div className="border border-gray-200 rounded-md overflow-hidden w-48 h-36 bg-gray-50">
                         {iteration.imageUrl ? (
                           <Image
                             src={iteration.imageUrl}
                             alt={`Iteration ${iteration.id}`}
-                            width={144}
+                            width={192}
                             height={144}
                             className="w-full h-full object-cover"
                             unoptimized
