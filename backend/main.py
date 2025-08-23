@@ -83,7 +83,7 @@ async def generate_workflow_events(
         "iteration": 1,
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }
-    yield f"data: {json.dumps(event)}\\n\\n"
+    yield f"data: {json.dumps(event)}\n\n"
 
     try:
         # Generate the image
@@ -97,7 +97,7 @@ async def generate_workflow_events(
             "image_url": f"/api/images/{image_id}.png",
             "timestamp": datetime.utcnow().isoformat() + "Z",
         }
-        yield f"data: {json.dumps(event)}\\n\\n"
+        yield f"data: {json.dumps(event)}\n\n"
 
         # Send OCR complete event (mock for now)
         event = {
@@ -107,7 +107,7 @@ async def generate_workflow_events(
             "match_status": True,
             "timestamp": datetime.utcnow().isoformat() + "Z",
         }
-        yield f"data: {json.dumps(event)}\\n\\n"
+        yield f"data: {json.dumps(event)}\n\n"
 
         # Send workflow complete event
         event = {
@@ -118,7 +118,7 @@ async def generate_workflow_events(
             "total_iterations": 1,
             "timestamp": datetime.utcnow().isoformat() + "Z",
         }
-        yield f"data: {json.dumps(event)}\\n\\n"
+        yield f"data: {json.dumps(event)}\n\n"
 
     except Exception as e:
         # Send error event
@@ -128,11 +128,11 @@ async def generate_workflow_events(
             "iteration": 1,
             "timestamp": datetime.utcnow().isoformat() + "Z",
         }
-        yield f"data: {json.dumps(event)}\\n\\n"
+        yield f"data: {json.dumps(event)}\n\n"
 
     # Always end with stream_end event
     event = {
         "type": SSEEventType.STREAM_END,
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }
-    yield f"data: {json.dumps(event)}\\n\\n"
+    yield f"data: {json.dumps(event)}\n\n"
