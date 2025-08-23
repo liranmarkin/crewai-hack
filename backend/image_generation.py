@@ -8,6 +8,7 @@ from openai import OpenAI
 
 load_dotenv()
 
+
 class ImageGenerator:
     def __init__(self, api_key: str | None = None):
         api_key = api_key or os.environ.get("OPENAI_API_KEY")

@@ -10,6 +10,7 @@ dependencies = [
     "openai==1.57.4",
     "httpx==0.28.1",
     "requests==2.32.3",
+    "google-cloud-vision>=3.10.2",
 ]
 
 [project.optional-dependencies]
