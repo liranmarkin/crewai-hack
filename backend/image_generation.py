@@ -14,8 +14,7 @@ class ImageGenerator:
         api_key = api_key or os.environ.get("FAL_KEY")
         if not api_key:
             raise ValueError(
-                "FAL.AI API key is required. Set FAL_KEY environment variable "
-                "or pass api_key to ImageGenerator"
+                "FAL.AI API key is required. Set FAL_KEY environment variable " "or pass api_key to ImageGenerator"
             )
 
         # Configure fal_client with API key

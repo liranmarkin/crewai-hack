@@ -7,6 +7,7 @@ import asyncio
 import json
 from collections.abc import AsyncGenerator
 from datetime import datetime
+from typing import Any
 
 from image_generation import get_image_generator
 from models import SSEEventType
@@ -30,9 +31,7 @@ def generate_reasoning(ocr_result: str, intended_text: str, iteration: int) -> s
 
     # Find character differences
     differences = []
-    for i, (actual, expected) in enumerate(
-        zip(cleaned_ocr, cleaned_intended, strict=False)
-    ):
+    for i, (actual, expected) in enumerate(zip(cleaned_ocr, cleaned_intended, strict=False)):
         if actual != expected:
             differences.append(f"position {i+1}: got '{actual}' need '{expected}'")
 
@@ -43,9 +42,7 @@ def generate_reasoning(ocr_result: str, intended_text: str, iteration: int) -> s
     return f"OCR: '{ocr_result}' vs '{intended_text}'. Need better clarity."
 
 
-def adjust_prompt_for_retry(
-    original_prompt: str, intended_text: str, ocr_result: str, iteration: int
-) -> str:
+def adjust_prompt_for_retry(original_prompt: str, intended_text: str, ocr_result: str, iteration: int) -> str:
     """Adjust the prompt for the next iteration based on OCR feedback."""
     base_improvements = [
         "with clear, bold, readable text",
@@ -95,9 +92,7 @@ def adjust_prompt_for_retry(
     if iteration >= 3:
         specific_improvements.append("with maximum text clarity and contrast")
     if iteration >= 4:
-        specific_improvements.append(
-            "prioritizing perfect text rendering above all else"
-        )
+        specific_improvements.append("prioritizing perfect text rendering above all else")
 
     # Combine improvements
     improvements = base_improvements + specific_improvements
@@ -106,9 +101,7 @@ def adjust_prompt_for_retry(
     return f"{original_prompt}, {improvement_text}. Text: '{intended_text}'."
 
 
-async def generate_workflow_events(
-    workflow_id: str, prompt: str
-) -> AsyncGenerator[str, None]:
+async def generate_workflow_events(workflow_id: str, prompt: str) -> AsyncGenerator[str, None]:
     """Generate Server-Sent Events for workflow progress."""
     # mypy: disable-error-code=dict-item
 
@@ -140,7 +133,7 @@ async def generate_workflow_events(
             # Start both tasks in parallel (only on first iteration for text extraction)
             if iteration == 1:
                 # Start text extraction task (runs in background)
-                async def send_text_extraction_event():
+                async def send_text_extraction_event() -> tuple[dict[str, Any], str | None]:
                     extracted_text = await text_extraction_task
                     event = {
                         "type": SSEEventType.TEXT_EXTRACTION,
@@ -153,36 +146,37 @@ async def generate_workflow_events(
                 text_event_task = asyncio.create_task(send_text_extraction_event())
 
             # Start image generation task (runs in background)
-            async def send_image_generated_event():
-                image_id, image_path = await generator.generate_image(current_prompt)
+            async def send_image_generated_event(prompt: str, iter_num: int) -> tuple[dict[str, Any], str, str]:
+                image_id, image_path = await generator.generate_image(prompt)
                 event = {
                     "type": SSEEventType.IMAGE_GENERATED,
-                    "iteration": iteration,  # type: ignore[dict-item]
+                    "iteration": iter_num,  # type: ignore[dict-item]
                     "image_url": f"/api/images/{image_id}.png",
                     "timestamp": datetime.utcnow().isoformat() + "Z",
                 }
                 return event, image_id, image_path
 
-            image_event_task = asyncio.create_task(send_image_generated_event())
+            image_event_task = asyncio.create_task(send_image_generated_event(current_prompt, iteration))
 
             # Wait for both tasks to complete and send events as they finish
             if iteration == 1:
                 # On first iteration, we need both text extraction and image generation
                 pending = {text_event_task, image_event_task}
-                image_data = None
-                text_data = None
+                image_data: tuple[str, str] | None = None
+                text_data: str | None = None
 
                 while pending:
                     done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
                     for task in done:
                         if task == text_event_task:
-                            event, intended_text = await task
+                            text_result = await task  # type: ignore[misc]
+                            event, extracted_text = text_result  # type: ignore[assignment]
                             yield f"data: {json.dumps(event)}\n\n"
-                            text_data = intended_text
+                            text_data = extracted_text  # type: ignore[assignment]
 
                             # If no intended text was detected, we can't proceed
-                            if intended_text is None:
-                                event = {
+                            if extracted_text is None:
+                                error_event = {
                                     "type": SSEEventType.WORKFLOW_ERROR,
                                     "error_message": (
                                         "No intended text detected in prompt. "
@@ -192,15 +186,18 @@ async def generate_workflow_events(
                                     "iteration": iteration,  # type: ignore[dict-item]
                                     "timestamp": datetime.utcnow().isoformat() + "Z",
                                 }
-                                yield f"data: {json.dumps(event)}\n\n"
+                                yield f"data: {json.dumps(error_event)}\n\n"
                                 return
 
                         elif task == image_event_task:
-                            event, image_id, image_path = await task
+                            image_result = await task  # type: ignore[misc]
+                            event, image_id, image_path = image_result  # type: ignore[assignment]
                             yield f"data: {json.dumps(event)}\n\n"
-                            image_data = (image_id, image_path)
+                            image_data = (image_id, image_path)  # type: ignore[assignment]
 
                 # Both tasks completed, use the results
+                assert image_data is not None, "image_data should not be None"
+                assert text_data is not None, "text_data should not be None"
                 image_id, image_path = image_data
                 intended_text = text_data
             else:
@@ -212,6 +209,9 @@ async def generate_workflow_events(
             ocr_result = extract_text_from_image(image_path)
 
             # Check if OCR result matches intended text
+            # intended_text should not be None at this point due to earlier checks
+            assert intended_text is not None, "intended_text should not be None at this point"
+
             # Clean up whitespace and normalize for comparison
             cleaned_ocr = " ".join(ocr_result.split()).upper()
             cleaned_intended = " ".join(intended_text.split()).upper()
@@ -219,10 +219,7 @@ async def generate_workflow_events(
 
             # Generate reasoning message
             if match_status:
-                message = (
-                    f"OCR detected '{ocr_result}' which matches expected "
-                    f"'{intended_text}'. Success!"
-                )
+                message = f"OCR detected '{ocr_result}' which matches expected " f"'{intended_text}'. Success!"
             else:
                 message = generate_reasoning(ocr_result, intended_text, iteration)
 
@@ -247,9 +244,7 @@ async def generate_workflow_events(
                 break
             elif iteration < max_iterations:
                 # Adjust prompt for next iteration
-                current_prompt = adjust_prompt_for_retry(
-                    prompt, intended_text, ocr_result, iteration
-                )
+                current_prompt = adjust_prompt_for_retry(prompt, intended_text, ocr_result, iteration)
 
         # Send final workflow result
         if success:

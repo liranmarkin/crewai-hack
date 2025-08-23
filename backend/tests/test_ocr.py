@@ -22,16 +22,12 @@ def test_ocr_happy_birthday_image() -> None:
     cleaned_text = " ".join(extracted_text.split()).upper()
 
     # Should detect "HAPPY BIRTHDAY" exactly
-    assert (
-        "HAPPY BIRTHDAY" == cleaned_text
-    ), f"Expected 'HAPPY BIRTHDAY', got '{cleaned_text}'"
+    assert "HAPPY BIRTHDAY" == cleaned_text, f"Expected 'HAPPY BIRTHDAY', got '{cleaned_text}'"
 
 
 def test_ocr_function_with_string_path() -> None:
     """Test OCR function with string path input."""
-    test_image_path = str(
-        Path(__file__).parent / "test_ocr_images" / "happy_birthday.png"
-    )
+    test_image_path = str(Path(__file__).parent / "test_ocr_images" / "happy_birthday.png")
 
     # Extract text using OCR
     extracted_text = extract_text_from_image(test_image_path)

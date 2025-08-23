@@ -19,9 +19,7 @@ async def test_ocr_integration_basic() -> None:
 
     async with httpx.AsyncClient(timeout=120.0) as client:
         async with client.stream("POST", url, json=payload) as response:
-            assert (
-                response.status_code == 200
-            ), f"Expected 200, got {response.status_code}"
+            assert response.status_code == 200, f"Expected 200, got {response.status_code}"
 
             ocr_events = []
             image_urls = []
@@ -48,15 +46,9 @@ async def test_ocr_integration_basic() -> None:
                             )
 
                             # Verify analysis event structure
-                            assert isinstance(
-                                ocr_result, str
-                            ), "OCR result should be a string"
-                            assert isinstance(
-                                match_status, bool
-                            ), "Match status should be boolean"
-                            assert isinstance(
-                                message, str
-                            ), "Message should be a string"
+                            assert isinstance(ocr_result, str), "OCR result should be a string"
+                            assert isinstance(match_status, bool), "Match status should be boolean"
+                            assert isinstance(message, str), "Message should be a string"
 
                         elif event_type == "workflow_complete":
                             workflow_completed = True
@@ -71,9 +63,7 @@ async def test_ocr_integration_basic() -> None:
                         elif event_type == "image_generated":
                             image_url = event.get("image_url", "")
                             image_urls.append(image_url)
-                            assert image_url.startswith(
-                                "/api/images/"
-                            ), "Image URL should have correct format"
+                            assert image_url.startswith("/api/images/"), "Image URL should have correct format"
 
                     except json.JSONDecodeError:
                         pytest.fail(f"Invalid JSON received: {event_data}")
@@ -126,9 +116,7 @@ async def test_ocr_perfect_match_scenario() -> None:
                         elif event_type == "workflow_complete":
                             success = event.get("success", False)
                             if success:
-                                assert (
-                                    found_perfect_match
-                                ), "Success should correlate with perfect match"
+                                assert found_perfect_match, "Success should correlate with perfect match"
                             break
 
                     except json.JSONDecodeError:

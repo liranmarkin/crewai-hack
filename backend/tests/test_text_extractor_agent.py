@@ -160,14 +160,10 @@ class TestTextExtractorIntegration(unittest.TestCase):
                 result = extract_intended_text(str(case["prompt"]))
 
                 if case["should_have_text"]:
-                    self.assertIsNotNone(
-                        result, f"Should extract text for: {case['prompt']}"
-                    )
+                    self.assertIsNotNone(result, f"Should extract text for: {case['prompt']}")
                     self.assertIsInstance(result, str)
                 else:
-                    self.assertIsNone(
-                        result, f"Should not extract text for: {case['prompt']}"
-                    )
+                    self.assertIsNone(result, f"Should not extract text for: {case['prompt']}")
 
 
 if __name__ == "__main__":
