@@ -1,6 +1,3 @@
-import json
-from collections.abc import AsyncGenerator
-from datetime import datetime
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Response
@@ -8,8 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 
 from image_generation import get_image_generator
-from models import GenerateRequest, SSEEventType
-from ocr import extract_text_from_image
+from models import GenerateRequest
+from workflow import generate_workflow_events
 
 app = FastAPI(title="Text-Aware Image Generation API")
 
@@ -71,78 +68,3 @@ async def get_image(image_id: str) -> Response:
         raise HTTPException(status_code=404, detail="Image not found")
 
     return FileResponse(image_path, media_type="image/png")
-
-
-async def generate_workflow_events(
-    workflow_id: str, prompt: str, intended_text: str
-) -> AsyncGenerator[str, None]:
-    """Generate Server-Sent Events for workflow progress."""
-
-    # Start with iteration_start event
-    event = {
-        "type": SSEEventType.ITERATION_START,
-        "iteration": 1,
-        "timestamp": datetime.utcnow().isoformat() + "Z",
-    }
-    yield f"data: {json.dumps(event)}\n\n"
-
-    try:
-        # Generate the image
-        generator = get_image_generator()
-        image_id, image_path = await generator.generate_image(prompt, intended_text)
-
-        # Send image generated event
-        event = {
-            "type": SSEEventType.IMAGE_GENERATED,
-            "iteration": 1,
-            "image_url": f"/api/images/{image_id}.png",
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-        }
-        yield f"data: {json.dumps(event)}\n\n"
-
-        # Perform OCR on the generated image
-        ocr_result = extract_text_from_image(image_path)
-
-        # Check if OCR result matches intended text
-        # Clean up whitespace and normalize for comparison
-        cleaned_ocr = " ".join(ocr_result.split()).upper()
-        cleaned_intended = " ".join(intended_text.split()).upper()
-        match_status = cleaned_ocr == cleaned_intended
-
-        # Send OCR complete event
-        event = {
-            "type": SSEEventType.OCR_COMPLETE,
-            "iteration": 1,
-            "ocr_result": ocr_result,
-            "match_status": match_status,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-        }
-        yield f"data: {json.dumps(event)}\n\n"
-
-        # Send workflow complete event
-        event = {
-            "type": SSEEventType.WORKFLOW_COMPLETE,
-            "success": match_status,
-            "final_image_url": f"/api/images/{image_id}.png",
-            "ocr_text": ocr_result,
-            "total_iterations": 1,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-        }
-        yield f"data: {json.dumps(event)}\n\n"
-
-    except Exception as e:
-        # Send error event
-        event = {
-            "type": SSEEventType.WORKFLOW_ERROR,
-            "error_message": str(e),
-            "iteration": 1,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-        }
-        yield f"data: {json.dumps(event)}\n\n"
-
-    # Always end with stream_end event
-    event = {
-        "type": SSEEventType.STREAM_END,
-        "timestamp": datetime.utcnow().isoformat() + "Z",
-    }
-    yield f"data: {json.dumps(event)}\n\n"

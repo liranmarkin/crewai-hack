@@ -14,8 +14,8 @@ def test_generate_endpoint() -> None:
     """Test the /api/generate SSE endpoint."""
     url = "http://localhost:8000/api/generate"
     payload = {
-        "prompt": "A colorful birthday poster with balloons",
-        "intended_text": "Happy Birthday!",
+        "prompt": "A birthday poster with balloons and 'HAPPY BIRTHDAY' text",
+        "intended_text": "HAPPY BIRTHDAY",
     }
 
     print(f"🚀 Sending request to {url}")
