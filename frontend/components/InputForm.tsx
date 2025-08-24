@@ -14,8 +14,8 @@ export function InputForm({ onSubmit, workflowState, onReset }: InputFormProps) 
   
   // Find the extracted text position in the prompt
   const getHighlightedPrompt = () => {
-    // Only highlight if we have both extracted text and current prompt, and we're currently generating
-    if (!workflowState.extractedText || !prompt.trim() || !workflowState.isGenerating) {
+    // Only highlight if we have both extracted text and current prompt
+    if (!workflowState.extractedText || !prompt.trim()) {
       return { before: prompt, highlight: '', after: '' };
     }
     
