@@ -1,9 +1,9 @@
 export interface GenerateRequest {
   prompt: string;
-  intended_text: string;
 }
 
 export type SSEEventType = 
+  | 'text_extraction'
   | 'iteration_start'
   | 'image_generated'
   | 'analysis'
@@ -15,6 +15,12 @@ export type SSEEventType =
 export interface BaseSSEEvent {
   type: SSEEventType;
   timestamp: string;
+}
+
+export interface TextExtractionEvent extends BaseSSEEvent {
+  type: 'text_extraction';
+  extracted_text: string | null;
+  has_intended_text: boolean;
 }
 
 export interface IterationStartEvent extends BaseSSEEvent {
@@ -62,6 +68,7 @@ export interface StreamEndEvent extends BaseSSEEvent {
 }
 
 export type SSEEvent = 
+  | TextExtractionEvent
   | IterationStartEvent
   | ImageGeneratedEvent
   | AnalysisEvent
@@ -87,6 +94,7 @@ export interface WorkflowState {
   isComplete: boolean;
   timeRemaining: number;
   error?: string;
+  extractedText?: string;
   finalResult?: {
     success: boolean;
     final_image_url?: string;
