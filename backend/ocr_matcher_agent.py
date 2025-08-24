@@ -37,7 +37,8 @@ class OCRMatcherAgent:
 
         # Configure Gemini LLM
         llm = LLM(
-            model="gemini/gemini-2.5-flash", temperature=0.1  # Lower temperature for more consistent OCR matching
+            model="gemini/gemini-2.5-flash",
+            temperature=0.1,  # Lower temperature for more consistent OCR matching
         )
 
         # Load the agent backstory from file
@@ -80,7 +81,10 @@ class OCRMatcherAgent:
             description=task_template.format(
                 ocr_result=ocr_result, intended_text=intended_text, current_prompt=current_prompt
             ),
-            expected_output="JSON with match_status (true/false), message (reasoning), and suggested_prompt",
+            expected_output=(
+                "ONLY valid JSON object with match_status (true/false), message (reasoning), "
+                "and suggested_prompt. No other text."
+            ),
             agent=self.agent,
         )
 
@@ -97,6 +101,7 @@ class OCRMatcherAgent:
         # Parse the result - expect JSON format
         try:
             import json
+            import re
 
             result_str = str(result).strip()
 
@@ -106,6 +111,13 @@ class OCRMatcherAgent:
             elif result_str.startswith("```"):
                 result_str = result_str.split("```")[1].split("```")[0].strip()
 
+            # Try to extract JSON from Gemini's response format that might include "Thought:" or other text
+            json_pattern = r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}"
+            json_matches = re.findall(json_pattern, result_str, re.DOTALL)
+            if json_matches:
+                # Use the first (and likely only) JSON object found
+                result_str = json_matches[0].strip()
+
             parsed_result = json.loads(result_str)
 
             return OCRMatchResult(
@@ -114,7 +126,7 @@ class OCRMatcherAgent:
                 suggested_prompt=parsed_result.get("suggested_prompt", current_prompt),
             )
 
-        except (json.JSONDecodeError, KeyError, AttributeError):
+        except (json.JSONDecodeError, KeyError, AttributeError, IndexError):
             # Fallback parsing if JSON fails
             result_str = str(result).strip().lower()
 

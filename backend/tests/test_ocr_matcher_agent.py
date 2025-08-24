@@ -142,6 +142,34 @@ class TestOCRMatcherAgent(unittest.TestCase):
         self.assertEqual(result.message, "Test message")
         self.assertEqual(result.suggested_prompt, "Test adjustment")
 
+    def test_json_parsing_with_thought_prefix(self) -> None:
+        """Test parsing JSON when LLM includes 'Thought:' prefix like Gemini does."""
+        # Mock the crew.kickoff() to return JSON with thought prefix (like Gemini)
+        mock_crew_instance = MagicMock()
+        mock_crew_instance.kickoff.return_value = (
+            "Thought: The OCR result has several significant content errors "
+            "compared to the intended text.\n\n"
+            "{\n"
+            '    "match_status": false,\n'
+            "    \"message\": \"Missing word 'Our' and extra text 'THE PLANERDS'\",\n"
+            '    "suggested_prompt": "Hand-painted protest sign with clear, bold text reading '
+            "'CLIMATE ACTION NOW! Save Our Planet for Future Generations'\"\n"
+            "}"
+        )
+        self.mock_crew.return_value = mock_crew_instance
+
+        matcher = OCRMatcherAgent()
+        result = matcher.compare_texts(
+            ocr_result="CLIMATE ACTION NOW! SAVE THE PLANET THE PLANERDS FOR FUTURE GENERATIONS",
+            intended_text="CLIMATE ACTION NOW! Save Our Planet for Future Generations",
+            current_prompt="Hand-painted protest sign on cardboard",
+        )
+
+        self.assertIsInstance(result, OCRMatchResult)
+        self.assertFalse(result.match_status)
+        self.assertIn("Missing word", result.message)
+        self.assertIn("clear, bold text", result.suggested_prompt)
+
     def test_json_parsing_fallback(self) -> None:
         """Test fallback parsing when JSON is malformed."""
         # Mock the crew.kickoff() to return malformed response
