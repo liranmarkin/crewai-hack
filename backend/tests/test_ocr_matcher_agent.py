@@ -185,6 +185,29 @@ class TestOCRMatcherAgent(unittest.TestCase):
         self.assertIn("parsing error", result.message.lower())
         self.assertEqual(result.suggested_prompt, "Test prompt")
 
+    def test_extra_text_rejection(self) -> None:
+        """Test that OCR results with extra text beyond intended text are rejected."""
+        # Mock the crew.kickoff() to return rejection for extra text
+        mock_crew_instance = MagicMock()
+        mock_crew_instance.kickoff.return_value = """{
+            "match_status": false,
+            "message": "OCR contains extra text 'THE PLANERDS' not present in intended text",
+            "suggested_prompt": "Hand-painted protest sign with ONLY the specified climate action text"
+        }"""
+        self.mock_crew.return_value = mock_crew_instance
+
+        matcher = OCRMatcherAgent()
+        result = matcher.compare_texts(
+            ocr_result="CLIMATE ACTION NOW! SAVE THE PLANET THE PLANERDS FOR FUTURE GENERATIONS",
+            intended_text="CLIMATE ACTION NOW! Save Our Planet for Future Generations",
+            current_prompt="Hand-painted protest sign on cardboard reading climate action message",
+        )
+
+        self.assertIsInstance(result, OCRMatchResult)
+        self.assertFalse(result.match_status)
+        self.assertIn("extra text", result.message.lower())
+        self.assertIn("ONLY the specified", result.suggested_prompt)
+
     def test_convenience_function_match(self) -> None:
         """Test the convenience function with a match result."""
         # Mock the crew.kickoff() to return match result
@@ -263,6 +286,12 @@ class TestOCRMatcherIntegration(unittest.TestCase):
                 "intended_text": "Happy Birthday",
                 "should_match": True,
                 "description": "Hyphen formatting",
+            },
+            {
+                "ocr_result": "Welcome Home Today",
+                "intended_text": "Welcome Home",
+                "should_match": False,
+                "description": "Extra text",
             },
         ]
 

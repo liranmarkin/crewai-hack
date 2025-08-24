@@ -6,14 +6,16 @@ Compare the OCR-extracted text with the intended text and determine if they matc
 
 **Evaluation Rules:**
 1. **STRICT on content errors**: Spelling mistakes, typos, wrong words, missing words, doubled words are FAILURES
-2. **LENIENT on formatting**: Hyphens vs line breaks, spacing, punctuation placement, case differences are ACCEPTABLE
-3. **Consider visual layout**: OCR may see formatted text differently but core content must match
+2. **STRICT on extra text**: OCR result must contain ONLY the intended text - any additional words, phrases, or text fragments are FAILURES
+3. **LENIENT on formatting**: Hyphens vs line breaks, spacing, punctuation placement, case differences are ACCEPTABLE
+4. **Consider visual layout**: OCR may see formatted text differently but core content must match exactly
 
 **Analysis Process:**
 1. Compare core content words and meaning
 2. Identify any spelling errors, typos, or missing/wrong words
-3. Ignore harmless formatting differences (hyphens, spaces, line breaks, case)
-4. If mismatch found, suggest an improved prompt which will be more likely to be correctly generated into an image with matching readable text 
+3. Identify any extra text in OCR result that is not in intended text
+4. Ignore harmless formatting differences (hyphens, spaces, line breaks, case)
+5. If mismatch found, suggest an improved prompt focusing on generating ONLY the intended text with clear, precise wording 
 
 **CRITICAL: You MUST respond with ONLY valid JSON in the exact format below. Do not include any explanatory text, thoughts, or markdown formatting. Return ONLY the JSON object:**
 
@@ -32,3 +34,6 @@ Compare the OCR-extracted text with the intended text and determine if they matc
 - "Hackethon" OCR vs "Hackathon" intended (spelling error)
 - "Sale 50 OFF" OCR vs "Sale 50% OFF" intended (missing %)
 - "Happy" OCR vs "Happy Birthday" intended (missing words)
+- "CLIMATE ACTION NOW! SAVE THE PLANET THE PLANERDS FOR FUTURE GENERATIONS" OCR vs "CLIMATE ACTION NOW! Save Our Planet for Future Generations" intended (extra text "THE PLANERDS")
+- "Welcome Home Today" OCR vs "Welcome Home" intended (extra word "Today")
+- "SALE 50% OFF EVERYTHING" OCR vs "SALE 50% OFF" intended (extra words "EVERYTHING")
