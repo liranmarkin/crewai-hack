@@ -53,6 +53,17 @@ export function useImageGeneration() {
       };
 
       switch (event.type) {
+        case 'text_extraction':
+          console.log('Text extraction event received:', event);
+          if (event.has_intended_text && event.extracted_text) {
+            newState.extractedText = event.extracted_text;
+            console.log(`Extracted text: "${event.extracted_text}"`);
+          } else {
+            console.log('No intended text detected in prompt');
+            newState.extractedText = undefined;
+          }
+          break;
+
         case 'iteration_start':
           // Find or create iteration
           let iteration = newState.iterations.find(i => i.id === event.iteration);
@@ -158,6 +169,7 @@ export function useImageGeneration() {
       error: undefined,
       currentImage: undefined,
       finalResult: undefined,
+      extractedText: undefined,
     });
 
     abortControllerRef.current = new AbortController();
@@ -198,6 +210,7 @@ export function useImageGeneration() {
       error: undefined,
       currentImage: undefined,
       finalResult: undefined,
+      extractedText: undefined,
     });
   }, []);
 
