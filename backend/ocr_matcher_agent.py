@@ -6,7 +6,7 @@ Compares OCR results with intended text using LLM-based intelligent matching.
 import os
 from pathlib import Path
 
-from crewai import Agent, Crew, Task
+from crewai import LLM, Agent, Crew, Task
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
@@ -18,7 +18,7 @@ class OCRMatchResult(BaseModel):
 
     match_status: bool
     message: str
-    suggested_prompt_adjustment: str
+    suggested_prompt: str
 
 
 class OCRMatcherAgent:
@@ -28,19 +28,24 @@ class OCRMatcherAgent:
         """Initialize the OCR matcher agent.
 
         Args:
-            api_key: Optional API key for the LLM. If not provided,
-                    uses environment variable.
+            api_key: Optional Gemini API key. If not provided,
+                    uses GEMINI_API_KEY environment variable.
         """
-        # Set up API key for the LLM (defaults to OpenAI)
+        # Set up API key for Gemini LLM
         if api_key:
-            os.environ["OPENAI_API_KEY"] = api_key
+            os.environ["GEMINI_API_KEY"] = api_key
+
+        # Configure Gemini LLM
+        llm = LLM(
+            model="gemini/gemini-2.5-flash", temperature=0.1  # Lower temperature for more consistent OCR matching
+        )
 
         # Load the agent backstory from file
         prompt_file = Path(__file__).parent / "prompts" / "ocr_matcher_prompt.txt"
         with open(prompt_file, encoding="utf-8") as f:
             backstory = f.read().strip()
 
-        # Create the OCR matching agent
+        # Create the OCR matching agent with Gemini LLM
         self.agent = Agent(
             role="OCR Text Matcher",
             goal=(
@@ -48,6 +53,7 @@ class OCRMatcherAgent:
                 "being strict about typos but lenient about formatting differences"
             ),
             backstory=backstory,
+            llm=llm,
             verbose=False,
             allow_delegation=False,
             max_iter=1,
@@ -74,7 +80,7 @@ class OCRMatcherAgent:
             description=task_template.format(
                 ocr_result=ocr_result, intended_text=intended_text, current_prompt=current_prompt
             ),
-            expected_output="JSON with match_status (true/false), message (reasoning), and suggested_prompt_adjustment",
+            expected_output="JSON with match_status (true/false), message (reasoning), and suggested_prompt",
             agent=self.agent,
         )
 
@@ -105,7 +111,7 @@ class OCRMatcherAgent:
             return OCRMatchResult(
                 match_status=parsed_result.get("match_status", False),
                 message=parsed_result.get("message", "No reasoning provided"),
-                suggested_prompt_adjustment=parsed_result.get("suggested_prompt_adjustment", current_prompt),
+                suggested_prompt=parsed_result.get("suggested_prompt", current_prompt),
             )
 
         except (json.JSONDecodeError, KeyError, AttributeError):
@@ -118,7 +124,7 @@ class OCRMatcherAgent:
             return OCRMatchResult(
                 match_status=match_status,
                 message=f"Parsing error, fallback analysis: {str(result)[:200]}",
-                suggested_prompt_adjustment=current_prompt,
+                suggested_prompt=current_prompt,
             )
 
 
@@ -131,10 +137,10 @@ def compare_ocr_with_intended_text(
         ocr_result: Text extracted from the generated image via OCR
         intended_text: The text that should have appeared in the image
         current_prompt: The current image generation prompt being used
-        api_key: Optional API key for the LLM
+        api_key: Optional Gemini API key
 
     Returns:
-        OCRMatchResult with match status, reasoning, and prompt suggestion
+        OCRMatchResult with match status, reasoning, and upgraded prompt
     """
     matcher = OCRMatcherAgent(api_key=api_key)
     return matcher.compare_texts(ocr_result, intended_text, current_prompt)

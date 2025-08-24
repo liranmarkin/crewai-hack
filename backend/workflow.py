@@ -162,7 +162,7 @@ async def generate_workflow_events(workflow_id: str, prompt: str) -> AsyncGenera
                 break
             elif iteration < max_iterations:
                 # Use LLM-suggested prompt adjustment instead of rule-based adjustment
-                current_prompt = match_result.suggested_prompt_adjustment
+                current_prompt = match_result.suggested_prompt
 
         # Send final workflow result
         if success:

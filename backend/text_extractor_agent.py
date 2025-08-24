@@ -6,7 +6,7 @@ Extracts intended text from user prompts for the text-aware image generation wor
 import os
 from pathlib import Path
 
-from crewai import Agent, Crew, Task
+from crewai import LLM, Agent, Crew, Task
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
@@ -27,23 +27,27 @@ class TextExtractorAgent:
         """Initialize the text extractor agent.
 
         Args:
-            api_key: Optional API key for the LLM. If not provided,
-                    uses environment variable.
+            api_key: Optional Gemini API key. If not provided,
+                    uses GEMINI_API_KEY environment variable.
         """
-        # Set up API key for the LLM (defaults to OpenAI)
+        # Set up API key for Gemini LLM
         if api_key:
-            os.environ["OPENAI_API_KEY"] = api_key
+            os.environ["GEMINI_API_KEY"] = api_key
+
+        # Configure Gemini LLM
+        llm = LLM(model="gemini/gemini-2.5-flash", temperature=0.3)
 
         # Load the agent backstory from file
         prompt_file = Path(__file__).parent / "prompts" / "text_extractor_prompt.txt"
         with open(prompt_file, encoding="utf-8") as f:
             backstory = f.read().strip()
 
-        # Create the text extraction agent
+        # Create the text extraction agent with Gemini LLM
         self.agent = Agent(
             role="Text Extractor",
             goal="Extract the exact text that should appear in the generated " "image from the user's prompt",
             backstory=backstory,
+            llm=llm,
             verbose=False,
             allow_delegation=False,
             max_iter=1,
@@ -94,7 +98,7 @@ def extract_intended_text(prompt: str, api_key: str | None = None) -> str | None
 
     Args:
         prompt: The user's image generation prompt
-        api_key: Optional API key for the LLM
+        api_key: Optional Gemini API key
 
     Returns:
         The extracted text or None if no text found

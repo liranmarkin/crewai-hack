@@ -39,7 +39,7 @@ class TestOCRMatcherAgent(unittest.TestCase):
         mock_crew_instance.kickoff.return_value = """{
             "match_status": true,
             "message": "Perfect match found",
-            "suggested_prompt_adjustment": "A poster saying 'Hackathon 2025'"
+            "suggested_prompt": "A poster saying 'Hackathon 2025'"
         }"""
         self.mock_crew.return_value = mock_crew_instance
 
@@ -53,7 +53,7 @@ class TestOCRMatcherAgent(unittest.TestCase):
         self.assertIsInstance(result, OCRMatchResult)
         self.assertTrue(result.match_status)
         self.assertEqual(result.message, "Perfect match found")
-        self.assertEqual(result.suggested_prompt_adjustment, "A poster saying 'Hackathon 2025'")
+        self.assertEqual(result.suggested_prompt, "A poster saying 'Hackathon 2025'")
 
     def test_typo_mismatch(self) -> None:
         """Test mismatch due to spelling errors."""
@@ -62,7 +62,7 @@ class TestOCRMatcherAgent(unittest.TestCase):
         mock_crew_instance.kickoff.return_value = """{
             "match_status": false,
             "message": "Spelling error detected: 'Hackethon' should be 'Hackathon'",
-            "suggested_prompt_adjustment": "A poster saying 'Hackathon 2025' with clear, bold letters"
+            "suggested_prompt": "A poster saying 'Hackathon 2025' with clear, bold letters"
         }"""
         self.mock_crew.return_value = mock_crew_instance
 
@@ -76,7 +76,7 @@ class TestOCRMatcherAgent(unittest.TestCase):
         self.assertIsInstance(result, OCRMatchResult)
         self.assertFalse(result.match_status)
         self.assertIn("spelling error", result.message.lower())
-        self.assertIn("clear, bold letters", result.suggested_prompt_adjustment)
+        self.assertIn("clear, bold letters", result.suggested_prompt)
 
     def test_formatting_difference_accepted(self) -> None:
         """Test that formatting differences like line breaks are accepted."""
@@ -85,7 +85,7 @@ class TestOCRMatcherAgent(unittest.TestCase):
         mock_crew_instance.kickoff.return_value = """{
             "match_status": true,
             "message": "Content matches despite line break formatting difference",
-            "suggested_prompt_adjustment": "A sign with text 'SALE 50% OFF'"
+            "suggested_prompt": "A sign with text 'SALE 50% OFF'"
         }"""
         self.mock_crew.return_value = mock_crew_instance
 
@@ -105,7 +105,7 @@ class TestOCRMatcherAgent(unittest.TestCase):
         mock_crew_instance.kickoff.return_value = """{
             "match_status": false,
             "message": "Missing word 'to' in OCR result",
-            "suggested_prompt_adjustment": "A banner saying 'Welcome to Home' with complete text and clear spacing"
+            "suggested_prompt": "A banner saying 'Welcome to Home' with complete text and clear spacing"
         }"""
         self.mock_crew.return_value = mock_crew_instance
 
@@ -119,7 +119,7 @@ class TestOCRMatcherAgent(unittest.TestCase):
         self.assertIsInstance(result, OCRMatchResult)
         self.assertFalse(result.match_status)
         self.assertIn("missing", result.message.lower())
-        self.assertIn("complete text", result.suggested_prompt_adjustment)
+        self.assertIn("complete text", result.suggested_prompt)
 
     def test_json_parsing_with_markdown_wrapper(self) -> None:
         """Test parsing JSON wrapped in markdown code blocks."""
@@ -129,7 +129,7 @@ class TestOCRMatcherAgent(unittest.TestCase):
         {
             "match_status": false,
             "message": "Test message",
-            "suggested_prompt_adjustment": "Test adjustment"
+            "suggested_prompt": "Test adjustment"
         }
         ```"""
         self.mock_crew.return_value = mock_crew_instance
@@ -140,7 +140,7 @@ class TestOCRMatcherAgent(unittest.TestCase):
         self.assertIsInstance(result, OCRMatchResult)
         self.assertFalse(result.match_status)
         self.assertEqual(result.message, "Test message")
-        self.assertEqual(result.suggested_prompt_adjustment, "Test adjustment")
+        self.assertEqual(result.suggested_prompt, "Test adjustment")
 
     def test_json_parsing_fallback(self) -> None:
         """Test fallback parsing when JSON is malformed."""
@@ -155,7 +155,7 @@ class TestOCRMatcherAgent(unittest.TestCase):
         self.assertIsInstance(result, OCRMatchResult)
         self.assertTrue(result.match_status)  # Should detect "match" keyword
         self.assertIn("parsing error", result.message.lower())
-        self.assertEqual(result.suggested_prompt_adjustment, "Test prompt")
+        self.assertEqual(result.suggested_prompt, "Test prompt")
 
     def test_convenience_function_match(self) -> None:
         """Test the convenience function with a match result."""
@@ -164,7 +164,7 @@ class TestOCRMatcherAgent(unittest.TestCase):
         mock_crew_instance.kickoff.return_value = """{
             "match_status": true,
             "message": "Perfect match",
-            "suggested_prompt_adjustment": "Current prompt works well"
+            "suggested_prompt": "Current prompt works well"
         }"""
         self.mock_crew.return_value = mock_crew_instance
 
@@ -183,7 +183,7 @@ class TestOCRMatcherAgent(unittest.TestCase):
         mock_crew_instance.kickoff.return_value = """{
             "match_status": false,
             "message": "Text size too small for OCR accuracy",
-            "suggested_prompt_adjustment": "A card saying 'Happy Birthday' with large, bold text and high contrast"
+            "suggested_prompt": "A card saying 'Happy Birthday' with large, bold text and high contrast"
         }"""
         self.mock_crew.return_value = mock_crew_instance
 
@@ -194,7 +194,7 @@ class TestOCRMatcherAgent(unittest.TestCase):
         self.assertIsInstance(result, OCRMatchResult)
         self.assertFalse(result.match_status)
         self.assertIn("text size", result.message.lower())
-        self.assertIn("large, bold text", result.suggested_prompt_adjustment)
+        self.assertIn("large, bold text", result.suggested_prompt)
 
 
 class TestOCRMatcherIntegration(unittest.TestCase):
@@ -205,10 +205,10 @@ class TestOCRMatcherIntegration(unittest.TestCase):
         # Skip integration tests if no API key is available
         import os
 
-        if not os.getenv("OPENAI_API_KEY"):
-            self.skipTest("OPENAI_API_KEY not available for integration tests")
+        if not os.getenv("GEMINI_API_KEY"):
+            self.skipTest("GEMINI_API_KEY not available for integration tests")
 
-    @patch.dict("os.environ", {"OPENAI_API_KEY": "test_key"})
+    @patch.dict("os.environ", {"GEMINI_API_KEY": "test_key"})
     def test_sample_comparisons_structure(self) -> None:
         """Test that the matcher returns proper structure for various comparisons."""
         test_cases = [
@@ -250,13 +250,13 @@ class TestOCRMatcherIntegration(unittest.TestCase):
                     mock_crew_instance.kickoff.return_value = f"""{{
                         "match_status": true,
                         "message": "Match for test case {i}",
-                        "suggested_prompt_adjustment": "Test prompt {i}"
+                        "suggested_prompt": "Test prompt {i}"
                     }}"""
                 else:
                     mock_crew_instance.kickoff.return_value = f"""{{
                         "match_status": false,
                         "message": "No match for test case {i}",
-                        "suggested_prompt_adjustment": "Improved test prompt {i}"
+                        "suggested_prompt": "Improved test prompt {i}"
                     }}"""
 
                 result = compare_ocr_with_intended_text(
@@ -268,9 +268,9 @@ class TestOCRMatcherIntegration(unittest.TestCase):
                     result.match_status, case["should_match"], f"Match status incorrect for: {case['description']}"
                 )
                 self.assertIsInstance(result.message, str)
-                self.assertIsInstance(result.suggested_prompt_adjustment, str)
+                self.assertIsInstance(result.suggested_prompt, str)
                 self.assertTrue(len(result.message) > 0)
-                self.assertTrue(len(result.suggested_prompt_adjustment) > 0)
+                self.assertTrue(len(result.suggested_prompt) > 0)
 
 
 if __name__ == "__main__":

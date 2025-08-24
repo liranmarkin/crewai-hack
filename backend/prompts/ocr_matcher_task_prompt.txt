@@ -13,14 +13,14 @@ Compare the OCR-extracted text with the intended text and determine if they matc
 1. Compare core content words and meaning
 2. Identify any spelling errors, typos, or missing/wrong words
 3. Ignore harmless formatting differences (hyphens, spaces, line breaks, case)
-4. If mismatch found, suggest specific prompt improvements
+4. If mismatch found, suggest an improved prompt which will be more likely to be correctly generated into an image with matching readable text 
 
 **Required Output Format (JSON):**
 ```json
 {{
   "match_status": true/false,
   "message": "Brief explanation of match result and reasoning",
-  "suggested_prompt_adjustment": "If match_status is false, provide an improved version of the current prompt that addresses the specific issues found. Focus on emphasizing correct spelling, improving text clarity, or adjusting visual presentation. If match_status is true, return the current prompt unchanged."
+  "suggested_prompt": "If match_status is false, provide an improved version of the current prompt that addresses the specific issues found. Focus on emphasizing correct spelling, improving text clarity, or adjusting visual presentation. If match_status is true, return the current prompt unchanged."
 }}
 ```
 

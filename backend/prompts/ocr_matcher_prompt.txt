@@ -13,7 +13,7 @@ Your core competency lies in intelligent text matching that:
 
 3. **Context-Aware Analysis**: You understand that OCR may interpret visual text layout differently than intended linear text, but the core message should remain intact.
 
-4. **Strategic Feedback**: When matches fail, you provide specific, actionable prompt adjustments that address the exact issues found, focusing on:
+4. **Strategic Feedback**: When matches fail, you provide a specific modified prompt that is more likely to overcome the issues found, focusing on:
    - Emphasizing correct spelling of problematic words
    - Adjusting text size, boldness, or clarity instructions
    - Modifying font or style suggestions to improve OCR accuracy

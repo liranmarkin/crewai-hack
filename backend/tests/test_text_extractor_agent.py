@@ -119,10 +119,10 @@ class TestTextExtractorIntegration(unittest.TestCase):
         # Skip integration tests if no API key is available
         import os
 
-        if not os.getenv("OPENAI_API_KEY"):
-            self.skipTest("OPENAI_API_KEY not available for integration tests")
+        if not os.getenv("GEMINI_API_KEY"):
+            self.skipTest("GEMINI_API_KEY not available for integration tests")
 
-    @patch.dict("os.environ", {"OPENAI_API_KEY": "test_key"})
+    @patch.dict("os.environ", {"GEMINI_API_KEY": "test_key"})
     def test_sample_prompts_structure(self) -> None:
         """Test that the extractor returns proper structure for various prompts."""
         test_cases = [
